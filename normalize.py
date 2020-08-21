@@ -4,7 +4,7 @@ import glob
 import concurrent.futures
 from tqdm import tqdm
 
-peakDir = "/home/sean/TFChIP/goodBeds/"
+peakDir = "/home/sean/tfchip/goodBeds/"
 
 def norm(factor, peakDir):
     beds = glob.glob(peakDir + factor + "/*.bed")

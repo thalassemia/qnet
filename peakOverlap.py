@@ -8,8 +8,8 @@ from pathlib import Path
 import concurrent.futures
 from tqdm import tqdm
 
-peakDir = "/home/sean/TFChIP/goodBeds/"
-outDir = "/home/sean/TFChIP/intersect/"
+peakDir = "/home/sean/tfchip/goodBeds/"
+outDir = "/home/sean/tfchip/intersect/"
 
 def intersect(factor):
     cofactors = next(os.walk(peakDir))[1]

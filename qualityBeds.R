@@ -1,9 +1,9 @@
 library(tidyverse)
 
-indexPath = "/home/sean/TFChIP/human_factor_full_QC.txt"
+indexPath = "/home/sean/tfchip/human_factor_full_QC.txt"
 dePath = "/home/sean/Research/SSvsP_SigTFs.csv"
-bedPath = "/home/sean/TFChIP/human_factor/"
-outDir = "/home/sean/TFChIP/goodBeds/"
+bedPath = "/home/sean/tfchip/human_factor/"
+outDir = "/home/sean/tfchip/goodBeds/"
 
 
 index <- read_delim(indexPath, "\t") %>% filter(FastQC>=25 & UniquelyMappedRatio>=0.5  & PBC>=0.5 & PeaksUnionDHSRatio>=0.7)
