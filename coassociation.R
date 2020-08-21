@@ -5,8 +5,8 @@ library(pheatmap)
 library(dendsort)
 library(RColorBrewer)
 
-dir <- "/home/sean/TFChIP/intersect/"
-outDir <- "/home/sean/TFChIP/cobinding/"
+dir <- "/home/sean/tfchip/intersect/"
+outDir <- "/home/sean/tfchip/cobinding/"
 genes <- data.frame("rank" = c(1:20, 1:20), 
                     "UD" = c(rep("Down", 20), rep("Up", 20)), 
                     "name" = c("DLX2", "DLX1", "DLX3", "ZNF695", "ATOH8", "MYB", 
@@ -26,7 +26,6 @@ tfs <- tfs[tfs %in% genes$name]
 progress <- 0
 
 for (tf in tfs) {
-  tf <- "EGR3"
   setwd(file.path(dir, tf))
   intersectBeds <- list.files()
   ca <- NULL
@@ -34,10 +33,9 @@ for (tf in tfs) {
   indivProg <- 0
   
   for (bed in intersectBeds) {
-    overlap <- read_csv(bed, col_names = FALSE, , col_types = cols())
+    overlap <- read_csv(bed, col_names = FALSE, , col_types = "cccccccccccccccccccccc")
     overlap <- select(overlap, c(4,ncol(overlap)))
     overlap[overlap=="."] <- "0"
-    overlap[,1] <- lapply(overlap[,1], as.character)
     overlap[,1] <- lapply(overlap[,1], parse_number)
     overlap <- distinct(overlap, X4, .keep_all = TRUE)
     overlap <- arrange(overlap, select(overlap,1), select(overlap,2)) %>% t()
@@ -70,7 +68,7 @@ for (tf in tfs) {
   sort_hclust <- function(...) as.hclust(dendsort(as.dendrogram(...)))
   mat_cluster_cols <- sort_hclust(hclust(dist(t(ca))))
   mat_cluster_rows <- sort_hclust(hclust(dist(ca)))
-  png(paste(outDir,tf,".jpg", sep=""), width=1000, height=800)
+  png(paste(outDir,tf,".jpg", sep=""), width=1200, height=1000)
   pheatmap(
     mat               = as.matrix(ca),
     cluster_cols      = mat_cluster_cols,
@@ -83,5 +81,4 @@ for (tf in tfs) {
     main              = paste(tf, " Co-Binding Map (", genes$UD[genes$name==tf], " #", genes$rank[genes$name==tf], ")", sep=""),
     color             = colorRampPalette(brewer.pal(9,"Reds"))(400))
   dev.off()
-  break
 }
