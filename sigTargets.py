@@ -20,7 +20,7 @@ def unique_targets(files, gene):
         targets.append(df)
     frame = pd.concat(targets, axis=0, ignore_index=True)
     frame = frame.drop_duplicates('GeneSymbol')
-    frame.sort_values(by='rank product', inplace=True)
+    frame.sort_values(by='Score', inplace=True)
     frame.to_csv(outdir + gene[0] + '_' + gene[1] + '.csv', sep='\t', index=False)
 
 files = glob.glob(indir + '*.txt')

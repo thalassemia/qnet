@@ -21,7 +21,9 @@ genes <- data.frame("rank" = c(1:20, 1:20),
 setwd(dir)
 tfs <- list.files()
 tfs <- tfs[tfs %in% genes$name]
-# tfs <- tfs[!(tfs %in% c("FOSL1", "EGR3"))]
+tfs <- tfs[!(tfs %in% c("FOSL1", "EGR3", "EGR2", "DLX2", "DLX1", "E2F1", "E2F7", 
+"E2F8", "KLF15", "FOXM1", "GATA2", "GRHL1", "IRF4", "KLF15", "KLF10", "KLF4", "MAF", 
+"MYB"))]
 
 progress <- 0
 
@@ -61,7 +63,7 @@ for (tf in tfs) {
     }
     intersectBeds[intersectBeds==bed] <- strsplit(bed, "_")[[1]][2]
     indivProg <- indivProg + 1
-    print(paste("Total", progress/length(tfs)*100, "%; ", tf, indivProg/length(intersectBeds)*100, "%"))
+    print(paste("Total", progress/length(tfs)*100, "%;", tf, indivProg/length(intersectBeds)*100, "%"))
   }
   rownames(ca) <- intersectBeds
   progress <- progress + 1
