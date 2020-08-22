@@ -8,8 +8,8 @@ from pathlib import Path
 import concurrent.futures
 from tqdm import tqdm
 
-peakDir = "/home/sean/tfchip/goodBeds/"
-outDir = "/home/sean/tfchip/intersect/"
+peakDir = "/home/sean/tfchip/normalized/"
+outDir = "/home/sean/tfchip/intersectq/"
 
 def intersect(factor):
     cofactors = next(os.walk(peakDir))[1]
@@ -20,9 +20,10 @@ def intersect(factor):
         result = subprocess.run(command, stdout=subprocess.PIPE)
         output = result.stdout
         df = pd.read_csv(io.BytesIO(output), sep="\t", header = None)
+        df = df.iloc[:,[0,1,2,3,9]]
         fileIDs = ((a.split('/')[-1]).split('.')[0]).split('*')[0] + "_" + cofactor + "_" + ((b.split('/')[-1]).split('.')[0]).split('*')[0] + ".csv"
         p = Path(f'{outDir}/{factor}/')
-        p.mkdir(exist_ok=True)
+        os.makedirs(p, exist_ok=True)
         df.to_csv(f"{p}/{fileIDs}", index=False, header = False)
     return
 
