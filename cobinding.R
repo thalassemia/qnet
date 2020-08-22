@@ -5,8 +5,9 @@ library(pheatmap)
 library(dendsort)
 library(RColorBrewer)
 
-dir <- "/home/sean/tfchip/intersect/"
-outDir <- "/home/sean/tfchip/cobinding/"
+dir <- "/home/sean/tfchip/intersectq/"
+outDir <- "/home/sean/tfchip/cobindingq/"
+dir.create(outDir)
 genes <- data.frame("rank" = c(1:20, 1:20), 
                     "UD" = c(rep("Down", 20), rep("Up", 20)), 
                     "name" = c("DLX2", "DLX1", "DLX3", "ZNF695", "ATOH8", "MYB", 
@@ -21,9 +22,9 @@ genes <- data.frame("rank" = c(1:20, 1:20),
 setwd(dir)
 tfs <- list.files()
 tfs <- tfs[tfs %in% genes$name]
-tfs <- tfs[!(tfs %in% c("FOSL1", "EGR3", "EGR2", "DLX2", "DLX1", "E2F1", "E2F7", 
-"E2F8", "KLF15", "FOXM1", "GATA2", "GRHL1", "IRF4", "KLF15", "KLF10", "KLF4", "MAF", 
-"MYB"))]
+# tfs <- tfs[!(tfs %in% c("FOSL1", "EGR3", "EGR2", "DLX2", "DLX1", "E2F1", "E2F7", 
+# "E2F8", "KLF15", "FOXM1", "GATA2", "GRHL1", "IRF4", "KLF15", "KLF10", "KLF4", "MAF", 
+# "MYB"))]
 
 progress <- 0
 
@@ -35,41 +36,28 @@ for (tf in tfs) {
   indivProg <- 0
   
   for (bed in intersectBeds) {
-    overlap <- read_csv(bed, col_names = FALSE, , col_types = "cccccccccccccccccccccc")
-    overlap <- select(overlap, c(4,ncol(overlap)))
+    overlap <- read_csv(bed, col_names = FALSE, , col_types = "ccccc")
+    overlap <- select(overlap, c(4,5))
     overlap[overlap=="."] <- "0"
+    overlap[overlap=="-1.0"] <- "0"
     overlap[,1] <- lapply(overlap[,1], parse_number)
-    overlap <- distinct(overlap, X4, .keep_all = TRUE)
-    overlap <- arrange(overlap, select(overlap,1), select(overlap,2)) %>% t()
-    overlap[1,] <- as.numeric(overlap[1,])
-    row <- as.vector(outer("peak", overlap[1,], paste, sep=""))
-    row <- shQuote(row, type = "cmd")
+    overlap <- arrange(overlap, overlap[,1], overlap[,2])
+    overlap <- distinct(overlap, overlap[,1], .keep_all = TRUE) %>% t()
+    row <- shQuote(overlap[1,], type = "cmd")
     row <- paste(row, as.character(unlist(overlap[2,])), sep="=")
     row <- paste(row, collapse=", ")
-    temp <- tryCatch(
-      {
-        eval(parse(text = paste("data.frame(", row, ")")))
-      }, 
-      error = function(e) {
-       return(-1)
-      }
-    )
-    if (temp == -1) {
-      intersectBeds = intersectBeds[intersectBeds!=bed]
-      indivProg <- indivProg - 1
-    }
-    else {
-      ca <- rbind(ca, temp)
-    }
+    temp <- eval(parse(text = paste("data.frame(", row, ")")))
+    ca <- rbind(ca, temp)
     intersectBeds[intersectBeds==bed] <- strsplit(bed, "_")[[1]][2]
     indivProg <- indivProg + 1
-    print(paste("Total", progress/length(tfs)*100, "%;", tf, indivProg/length(intersectBeds)*100, "%"))
+    print(paste((progress+indivProg/length(intersectBeds))/length(tfs)*100, "%"))
   }
   rownames(ca) <- intersectBeds
   progress <- progress + 1
+  print(paste("Generating heatmap for", tf))
   sort_hclust <- function(...) as.hclust(dendsort(as.dendrogram(...)))
-  mat_cluster_cols <- sort_hclust(hclust(dist(t(ca))))
-  mat_cluster_rows <- sort_hclust(hclust(dist(ca)))
+  mat_cluster_cols <- sort_hclust(hclust(dist(t(ca)), method="ward.D2"))
+  mat_cluster_rows <- sort_hclust(hclust(dist(ca), method="ward.D2"))
   png(paste(outDir,tf,".jpg", sep=""), width=1200, height=1000)
   pheatmap(
     mat               = as.matrix(ca),
