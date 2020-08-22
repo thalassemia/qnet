@@ -1,10 +1,10 @@
 library(tidyverse)
 
 indexPath = "/home/sean/tfchip/human_factor_full_QC.txt"
-dePath = "/home/sean/Research/SSvsP_SigTFs.csv"
+dePath = "/home/sean/data/humantfs/deTF.csv"
 bedPath = "/home/sean/tfchip/human_factor/"
 outDir = "/home/sean/tfchip/goodBeds/"
-
+dir.create(outDir)
 
 index <- read_delim(indexPath, "\t") %>% filter(FastQC>=25 & UniquelyMappedRatio>=0.5  & PBC>=0.5 & PeaksUnionDHSRatio>=0.7)
 # index <- read_delim(indexPath, "\t") %>% filter(Factor %in% c("DLX2", "DLX1", "DLX3", "ZNF695", "ATOH8", "MYB", 
