@@ -8,15 +8,15 @@ from pathlib import Path
 import concurrent.futures
 from tqdm import tqdm
 
-peakDir = "/home/sean/tfchip/normalized/"
-outDir = "/home/sean/tfchip/intersectq/"
+peakDir = "/u/scratch/s/seanchea/normalizeds/"
+outDir = "/u/scratch/s/seanchea/intersects/"
 
 def intersect(factor):
     cofactors = next(os.walk(peakDir))[1]
     a = glob.glob(peakDir + factor + "/*.bed")[0]
     for cofactor in cofactors:
         b = glob.glob(peakDir + cofactor + "/*.bed")[0]
-        command = shlex.split(f"/home/sean/bedtools intersect -a {a} -b {b} -loj")
+        command = shlex.split(f"bedtools intersect -a {a} -b {b} -loj")
         result = subprocess.run(command, stdout=subprocess.PIPE)
         output = result.stdout
         df = pd.read_csv(io.BytesIO(output), sep="\t", header = None)
@@ -27,7 +27,6 @@ def intersect(factor):
         df.to_csv(f"{p}/{fileIDs}", index=False, header = False)
     return
 
-filesystem = os.walk(peakDir)
-factors = next(filesystem)[1]
+factors = next(os.walk(peakDir))[1]
 with concurrent.futures.ProcessPoolExecutor() as executor:
     list(tqdm(executor.map(intersect, factors), total=len(factors)))
