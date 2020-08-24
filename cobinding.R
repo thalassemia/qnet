@@ -4,10 +4,11 @@ library(grid)
 library(pheatmap)
 library(dendsort)
 library(RColorBrewer)
+library(fastcluster)
 
-dir <- "/home/sean/tfchip/intersectq/"
-outDir <- "/home/sean/tfchip/cobindingq/"
-dir.create(outDir)
+dir <- "/u/scratch/s/seanchea/intersects/"
+outDir <- "/u/scratch/s/seanchea/cobindings/"
+dir.create(outDir, showWarnings = FALSE)
 genes <- data.frame("rank" = c(1:20, 1:20), 
                     "UD" = c(rep("Down", 20), rep("Up", 20)), 
                     "name" = c("DLX2", "DLX1", "DLX3", "ZNF695", "ATOH8", "MYB", 
@@ -18,57 +19,65 @@ genes <- data.frame("rank" = c(1:20, 1:20),
                                "TSHZ2", "KLF15", "MAF", "GRHL1", "BATF2", "EGR3",
                                "SIX2", "ZNF540", "EBF4", "KLF4", "SATB1", "ZMAT1",
                                "ZNF608"))
+sort_hclust <- function(...) as.hclust(dendsort(as.dendrogram(...)))
+taskid <- Sys.getenv("SGE_TASK_ID")
+#set.seed(10)
+#tfchunks <- split(genes, sample(1:40))
 
-setwd(dir)
-tfs <- list.files()
-tfs <- tfs[tfs %in% genes$name]
-# tfs <- tfs[!(tfs %in% c("FOSL1", "EGR3", "EGR2", "DLX2", "DLX1", "E2F1", "E2F7", 
-# "E2F8", "KLF15", "FOXM1", "GATA2", "GRHL1", "IRF4", "KLF15", "KLF10", "KLF4", "MAF", 
-# "MYB"))]
+#tfs <- list.files(dir)
+#genes <- tfchunks[[taskid]]
+#rm(tfchunks, taskid)
+#tfs <- tfs[!(tfs %in% c("EGR2", "DLX2", "DLX1", "E2F1", "E2F7", "E2F8", "EGR3"))]
+#tf <- tfs[tfs %in% genes$name]
+#rm(tfs)
+tfs <- c("EGR3", "IRF4", "KLF15", "NKX3-1", "FOSL1", "FOXM1", "SIX2")
+tf <- tfs[as.integer(taskid)]
 
 progress <- 0
 
-for (tf in tfs) {
-  setwd(file.path(dir, tf))
-  intersectBeds <- list.files()
-  ca <- NULL
-  
-  indivProg <- 0
-  
-  for (bed in intersectBeds) {
-    overlap <- read_csv(bed, col_names = FALSE, , col_types = "ccccc")
-    overlap <- select(overlap, c(4,5))
-    overlap[overlap=="."] <- "0"
-    overlap[overlap=="-1.0"] <- "0"
-    overlap[,1] <- lapply(overlap[,1], parse_number)
-    overlap <- arrange(overlap, overlap[,1], overlap[,2])
-    overlap <- distinct(overlap, overlap[,1], .keep_all = TRUE) %>% t()
-    row <- shQuote(overlap[1,], type = "cmd")
-    row <- paste(row, as.character(unlist(overlap[2,])), sep="=")
-    row <- paste(row, collapse=", ")
-    temp <- eval(parse(text = paste("data.frame(", row, ")")))
-    ca <- rbind(ca, temp)
-    intersectBeds[intersectBeds==bed] <- strsplit(bed, "_")[[1]][2]
-    indivProg <- indivProg + 1
-    print(paste((progress+indivProg/length(intersectBeds))/length(tfs)*100, "%"))
-  }
-  rownames(ca) <- intersectBeds
-  progress <- progress + 1
-  print(paste("Generating heatmap for", tf))
-  sort_hclust <- function(...) as.hclust(dendsort(as.dendrogram(...)))
-  mat_cluster_cols <- sort_hclust(hclust(dist(t(ca)), method="ward.D2"))
-  mat_cluster_rows <- sort_hclust(hclust(dist(ca), method="ward.D2"))
-  png(paste(outDir,tf,".jpg", sep=""), width=1200, height=1000)
-  pheatmap(
-    mat               = as.matrix(ca),
-    cluster_cols      = mat_cluster_cols,
-    cluster_rows      = mat_cluster_rows,
-    fontsize          = 20,
-    treeheight_row    = 0, 
-    treeheight_col    = 0,
-    show_colnames     = F,
-    fontsize_row      = 7,
-    main              = paste(tf, " Co-Binding Map (", genes$UD[genes$name==tf], " #", genes$rank[genes$name==tf], ")", sep=""),
-    color             = colorRampPalette(brewer.pal(9,"Reds"))(400))
-  dev.off()
+setwd(file.path(dir, tf))
+intersectBeds <- list.files()
+ca <- NULL
+
+indivProg <- 0
+
+for (bed in intersectBeds) {
+  overlap <- read_csv(bed, col_names = FALSE, col_types = "ccccc")
+  overlap <- select(overlap, c(4,5))
+  #overlap[overlap=="."] <- "0"
+  overlap[overlap=="-1.0"] <- "0"
+  overlap[,1] <- lapply(overlap[,1], parse_number)
+  overlap <- arrange(overlap, overlap[,1], overlap[,2])
+  overlap <- distinct(overlap, overlap[,1], .keep_all = TRUE) %>% t()
+  row <- shQuote(overlap[1,], type = "cmd")
+  row <- paste(row, as.character(unlist(overlap[2,])), sep="=")
+  row <- paste(row, collapse=", ")
+  temp <- eval(parse(text = paste("data.frame(", row, ")")))
+  ca <- rbind(ca, temp)
+  intersectBeds[intersectBeds==bed] <- strsplit(bed, "_")[[1]][2]
+  indivProg <- indivProg + 1
+  print(paste(indivProg/length(intersectBeds)*100, "%", sep=""))
 }
+rownames(ca) <- intersectBeds
+rm(overlap, temp, row, bed, intersectBeds)
+print(paste("Generating heatmap for", tf))
+print("Without heatmap")
+print(gc(full=TRUE))
+png(paste(outDir,tf,".png", sep=""), width=1200, height=1000)
+pheatmap(
+  mat               = as.matrix(ca),
+  cluster_cols      = sort_hclust(hclust.vector(t(ca), method="ward")),
+  cluster_rows      = sort_hclust(hclust.vector(ca, method="ward")),
+  fontsize          = 20,
+  treeheight_row    = 0, 
+  treeheight_col    = 0,
+  show_colnames     = F,
+  fontsize_row      = 7,
+  main              = paste(tf, " Co-Binding Map (", genes$UD[genes$name==tf], " #", genes$rank[genes$name==tf], ")", sep=""),
+  color             = colorRampPalette(brewer.pal(9,"Reds"))(400))
+dev.off()
+print("Heatmap done and with matrix")
+print(gc(full=TRUE))
+rm(ca)
+print("Heatmap done without matrix")
+print(gc(full=TRUE))
