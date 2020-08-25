@@ -20,5 +20,5 @@ for root, dirs, files in os.walk(peakdir):
     for name in files:
         names.append(name)
         roots.append(root)
-p = Pool(8)
-p.map(beta, zip(names, roots))
+p = Pool()
+p.map(unpack, zip(names, roots))
