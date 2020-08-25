@@ -1,4 +1,4 @@
-# Transcriptional Networks Underlying Quiescence
+# TFs and Quiescence
 Some very messy, commentless code that I created to play around with ChIP-Seq Data
 
 
@@ -26,7 +26,7 @@ Runs BETA minus (hg38) on input bed files to generate list of potential targets 
 
 
 ## [cobinding.R](cobinding.R)
-**Note:** Designed to run as job array on Hoffman2 Cluster
+_**Note:** Designed to run as job array on Hoffman2 Cluster_
 
 **Dependencies:** R 4.0+, tideverse, pheatmap, dendsort, RColorBrewer, fastcluster
 
@@ -60,7 +60,7 @@ Reads bed files, ranks peaks<sup>*</sup>, and assigns them each a normalized ran
 For each transcription factor, runs all unique combinations of:
 >`bedtools intersect -a {factor} -b {cofactor} -loj` 
 
-`factor` is always the [highest quality](qualityBeds.R), [rank normalized](#normalize.py) bed file for the TF in question.  
+`factor` is always the TF's [highest quality](qualityBeds.R), [rank normalized](#normalize.py) bed file.  
 `cofactor` can be any other TF's highest quality, rank normalized bed file.
 
 For each unique combination of `factor` and `cofactor`, each row in the output file combines the chromosome, peak start, and peak end values from `factor` with the normalized rank of the overlapping peaks in `cofactor` (-1 if none; multiple rows if more than one).
@@ -79,7 +79,7 @@ For each transcription factor that exhibits [significant differential expression
 Uses a mix of [ENCODE](https://www.encodeproject.org/data-standards/terms/) and [Cistrome](http://cistrome.org/db/#/about) ChIP-Seq quality guidelines to filter and rank the quality of all bed files in a new directory with the following structure:
 >`~/goodBeds/{factor}/{rank}.bed`
 
-Specifically, bed files had to meet the following criteria:
+Specifically, bed files have to meet the following criteria:
 >`fastQC>=25 && UniquelyMappedRatio>=0.5 && PBC>=0.5 && PeaksUnionDHSRatio>=0.7`
 
 The passing files were then sorted first by descending `FRiP` then by descending `PeaksFoldChangeAbove10` before being assigned their final ranks.
