@@ -90,6 +90,8 @@ For each transcription factor, consolidates all BETA output files into a single 
 
 
 ## [targetEnrichment.R](targetEnrichment.R)
+_**Note:** Very memory intensive, 32G on Hoffman2_
+
 **Dependencies:** R 4.0+, tidyverse, fastcluster, pheatmap, RColorBrewer
 
 Create matrix of `log2 Fold Change * regulatory potential` values with all putative targets as columns and TFs as rows. Plot heatmap. Create lists of TFs by most putative targets up/down with quiescence and highest/lowest mean value.
