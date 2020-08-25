@@ -4,15 +4,15 @@ Some very messy, commentless code that I created to play around with ChIP-Seq Da
 
 ## Table of Contents
 1. [Overview](#Overview)
-2. [betaBatch.py](#betaBatch.py)
-2. [cobinding.R](#cobinding.R)
-4. [deTargets.R](#deTargets.R)
-5. [mergeDEandTF.R](#mergeDEandTF.R)
-6. [normalize.py](#normalize.py)
-7. [peakOverlap.py](#peakOverlap.py)
-8. [pullPeakFiles.py](#pullPeakFiles.py)
-9. [sigTargets.py](#sigTargets.py)
-10. [targetEnrichment.R](#targetEnrichment.R)
+2. [betaBatch.py](#betaBatchpy)
+2. [cobinding.R](#cobindingR)
+4. [deTargets.R](#deTargetsR)
+5. [mergeDEandTF.R](#mergeDEandTFR)
+6. [normalize.py](#normalizepy)
+7. [peakOverlap.py](#peakOverlappy)
+8. [pullPeakFiles.py](#pullPeakFilespy)
+9. [sigTargets.py](#sigTargetspy)
+10. [targetEnrichment.R](#targetEnrichmentR)
 
 
 ## [Overview](https://miro.com/app/board/o9J_kmhzx0k=/?moveToWidget=3074457349492140638&cot=12)
