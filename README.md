@@ -26,7 +26,7 @@ Runs BETA minus (hg38) on input bed files to generate list of potential targets 
 
 
 ## [cobinding.R](cobinding.R)
-_**Note:** Designed to run as job array on Hoffman2 Cluster_
+_**Note:** Designed to run as a job array on Hoffman2 Cluster_
 
 **Dependencies:** R 4.0+, tideverse, pheatmap, dendsort, RColorBrewer, fastcluster
 
