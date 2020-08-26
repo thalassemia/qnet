@@ -54,7 +54,7 @@ cobinding <- function(tf) {
   print(paste("Generating heatmap for", tf))
   print("Without heatmap")
   print(gc(full=TRUE))
-  png(paste(outDir,tf,".png", sep=""), width=1200, height=1000)
+  pdf(paste(outDir,tf,".png", sep=""))
   pheatmap(
     mat               = as.matrix(ca),
     cluster_cols      = sort_hclust(hclust.vector(t(ca), method="ward")),
