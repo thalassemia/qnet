@@ -58,7 +58,7 @@ Reads bed files, ranks peaks, and assigns them each a normalized rank score (see
 
 For each transcription factor, runs:
 
-    `bedtools intersect -a {factor} -b {cofactor} -loj` 
+    bedtools intersect -a {factor} -b {cofactor} -loj
 
 Here, `factor` is always the focus TF's [highest quality](#qualityBedsR), [rank normalized](#normalizepy) bed file. `cofactor` iterates through the highest quality, rank normalized bed files for all TFs (including the focus TF).
 
