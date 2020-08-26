@@ -2,42 +2,49 @@ library(tidyverse)
 library(fastcluster)
 library(pheatmap)
 library(RColorBrewer)
+library(dendsort)
 
-detargets = "/u/scratch/s/seanchea/detargets"
-outDir = "/u/home/s/seanchea/"
+detargets = system("echo $SCRATCH/data/detargets", intern = TRUE)
+outDir = system("echo $SCRATCH/output/", intern = TRUE)
+dir.create(outDir, warnings=FALSE)
 setwd(detargets)
 
 tfs <- list.files(detargets)
-matrix <- read_csv(tfs[1], col_types=cols()) %>% select(c(5,7,10))
+matrix <- read_csv(tfs[1], col_types=cols()) %>% select(c(Score, GeneSymbol, log2FoldChange))
+matrix$factor <- rep(strsplit(tfs[1],".csv"), nrow(matrix))
 
 for (tf in tfs[-1]) {
-  temp <- read_csv(tf, col_types=cols()) %>% select(c(5,7,10))
-  matrix <- full_join(matrix, temp, by="GeneSymbol")
+  temp <- read_csv(tf, col_types=cols()) %>% select(c(Score, GeneSymbol, log2FoldChange))
+  temp$factor <- rep(strsplit(tf,".csv"), nrow(temp))
+  matrix <- rbind(matrix, temp)
+}
+print(gc())
+
+matrix$enrich <- matrix[,3]
+targets <- matrix[!duplicated(matrix[,2]),2]
+
+scores <- matrix(0, length(tfs), nrow(targets))
+rownames(scores) <- unlist(strsplit(tfs,".csv"))
+colnames(scores) <- targets$GeneSymbol
+
+for (row in 1:nrow(matrix)) {
+  scores[unlist(matrix[row,4]), unlist(matrix[row,2])] = unlist(matrix[row,5])
 }
 
-score <- NULL
-targets <- matrix[2]
-matrix <- matrix[-2]
-matrix[is.na(matrix)] <- 0
 
-
-for (i in 1:length(tfs)) {
-  score <- rbind(score, t(matrix[,1]*matrix[,2]))
-}
-
-rownames(score) <- unlist(strsplit(tfs,".csv"))
-colnames(score) <- targets
-
-png(paste(outDir,"enrich.png", sep=""), width=1200, height=1200, res=300)
+sort_hclust <- function(...) as.hclust(dendsort(as.dendrogram(...)))
+clustcols <- sort_hclust(hclust.vector(t(scores), method="ward"))
+clustrows <- sort_hclust(hclust.vector(scores, method="ward"))
+png(paste(outDir,"enrich.png", sep=""), width=1200, height=1200)
 pheatmap(
-  mat               = matrix,
-  cluster_cols      = sort_hclust(hclust.vector(t(matrix), method="ward")),
-  cluster_rows      = sort_hclust(hclust.vector(matrix, method="ward")),
+  mat               = scores,
+  cluster_cols      = clustcols,
+  cluster_rows      = clustrows,
   fontsize          = 20,
   treeheight_row    = 0, 
   treeheight_col    = 0,
   show_colnames     = F,
   fontsize_row      = 7,
-  main              = paste(tf, " Co-Binding Map (", genes$UD[genes$name==tf], " #", genes$rank[genes$name==tf], ")", sep=""),
-  color             = colorRampPalette(brewer.pal(9,"Reds"))(400))
+  main              = "Enrichment for Putative TF Targets",
+  color             = colorRampPalette(brewer.pal(11,"Spectral"))(1000))
 dev.off()
