@@ -1,7 +1,7 @@
 library(tidyverse)
 
 indexPath = system("echo $SCRATCH/tfchip/human_factor_full_QC.txt", intern = TRUE)
-deTFPath = system("echo $SCRATCH/data/humantfs/deTF.csv", intern = TRUE)
+deTFPath = system("echo $SCRATCH/data/deTF.csv", intern = TRUE)
 bedPath = system("echo $SCRATCH/tfchip/human_factor", intern = TRUE)
 outDir = system("echo $SCRATCH/tfchip/goodBeds", intern = TRUE)
 dir.create(outDir)
