@@ -4,7 +4,7 @@ library(pheatmap)
 library(RColorBrewer)
 library(dendsort)
 
-detargets = system("echo $SCRATCH/data/detargets", intern = TRUE)
+detargets = system("echo $SCRATCH/output/detargets", intern = TRUE)
 outDir = system("echo $SCRATCH/output/", intern = TRUE)
 dir.create(outDir, warnings=FALSE)
 setwd(detargets)
