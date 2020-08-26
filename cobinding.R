@@ -7,12 +7,11 @@ library(RColorBrewer)
 library(fastcluster)
 
 intersectDir <- system("echo $SCRATCH/output/intersect/", intern = TRUE)
-outDir <- system("echo $SCRATCH/output/conbinding/", intern = TRUE)
-dir.create(outDir, showWarnings = FALSE)
+outDir <- system("echo $SCRATCH/output/cobinding/", intern = TRUE)
 genes <- data.frame("rank" = c(1:20, 1:20), 
                     "UD" = c(rep("Down", 20), rep("Up", 20)), 
                     "name" = c("DLX2", "DLX1", "DLX3", "ZNF695", "ATOH8", "MYB", 
-                               "NKX3-1", "MYBL2", "GL1", "CENPA", "SP6", 
+                               "NKX3-1", "MYBL2", "GLI1", "CENPA", "SP6", 
                                "ZNF850", "FOXM1", "ZNF492", "E2F1", "GATA2", 
                                "E2F8", "E2F7", "KLF10", "FOSL1", "IRX6", 
                                "PKNOX2", "EGR2", "IRF4", "NR3C2", "THRB", "OSR2",
@@ -21,20 +20,13 @@ genes <- data.frame("rank" = c(1:20, 1:20),
                                "ZNF608"))
 sort_hclust <- function(...) as.hclust(dendsort(as.dendrogram(...)))
 taskid <- Sys.getenv("SGE_TASK_ID")
-#set.seed(10)
-#tfchunks <- split(genes, sample(1:40))
+set.seed(10)
+tfchunks <- split(genes, sample(1:40))
+genes <- tfchunks[[taskid]]
+rm(tfchunks, taskid)
 
-#tfs <- list.files(dir)
-#genes <- tfchunks[[taskid]]
-#rm(tfchunks, taskid)
-#tfs <- tfs[!(tfs %in% c("EGR2", "DLX2", "DLX1", "E2F1", "E2F7", "E2F8", "EGR3"))]
-#tf <- tfs[tfs %in% genes$name]
-#rm(tfs)
-tfs <- c("EGR3", "IRF4", "KLF15", "NKX3-1", "FOSL1", "FOXM1", "SIX2")
-tf <- tfs[as.integer(taskid)]
-
-cobinding <- function(dir, outDir, tf) {
-  setwd(paste(dir, tf, sep=""))
+cobinding <- function(tf) {
+  setwd(paste(intersectDir, tf, sep=""))
   intersectBeds <- list.files()
   ca <- NULL
 
@@ -82,5 +74,23 @@ cobinding <- function(dir, outDir, tf) {
   print(gc(full=TRUE))
 }
 
-cobinding(paste(dir, "signal", sep=""), paste(outDir, "signal", sep=""), tf)
-cobinding(paste(dir, "q", sep=""), paste(outDir, "q", sep=""), tf)
+sigDir <- paste(intersectDir, "signal/", sep="")
+qDir <- paste(intersectDir, "qval/", sep="")
+sigOut <- paste(outDir, "signal/", sep="")
+qOut <- paste(outDir, "qval/", sep="")
+intersectDir <- sigDir
+outDir <- sigOut
+tfs <- list.files(intersectDir)
+tf <- tfs[tfs %in% genes$name]
+rm(tfs)
+stopifnot(!is.null(tf))
+dir.create(outDir, showWarnings = FALSE, recursive = TRUE)
+cobinding(tf)
+intersectDir <- qDir
+outDir <- qOut
+tfs <- list.files(intersectDir)
+tf <- tfs[tfs %in% genes$name]
+rm(tfs)
+stopifnot(!is.null(tf))
+dir.create(outDir, showWarnings = FALSE, recursive = TRUE)
+cobinding(tf)

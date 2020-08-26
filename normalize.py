@@ -20,12 +20,13 @@ def norm(factor):
         temp.to_csv(os.path.join(outDir,factor,a), sep="\t", index=False, header=False)
 
 factors = next(os.walk(peakDir))[1]
+rankBy = 6
+sigOut = outDir + "signal"
+qOut = outDir + "qval"
+outDir = sigOut
 with concurrent.futures.ProcessPoolExecutor() as executor:
-    rankBy = 6
-    sigOut = outDir + "signal"
-    qOut = outDir + "q"
-    outDir = sigOut
     list(tqdm(executor.map(norm, factors), total=len(factors)))
-    rankBy = 8
-    outDir = qOut
+rankBy = 8
+outDir = qOut
+with concurrent.futures.ProcessPoolExecutor() as executor:
     list(tqdm(executor.map(norm, factors), total=len(factors)))

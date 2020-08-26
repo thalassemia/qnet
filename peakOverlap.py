@@ -27,15 +27,17 @@ def intersect(factor):
         df.to_csv(f"{p}/{fileIDs}", index=False, header = False)
     return
 
-factors = next(os.walk(peakDir))[1]
+sigIn = peakDir + "signal/"
+sigOut = outDir + "signal/"
+qIn = peakDir + "qval/"
+qOut = outDir + "qval/"
+peakDir = sigIn
+outDir = sigOut
 with concurrent.futures.ProcessPoolExecutor() as executor:
-    sigIn = peakDir + "signal/"
-    sigOut = outDir + "signal/"
-    qIn = peakDir + "q/"
-    qOut = outDir + "q/"
-    peakDir = sigIn
-    outDir = sigOut
+    factors = next(os.walk(peakDir))[1]
     list(tqdm(executor.map(intersect, factors), total=len(factors)))
-    peakDir = qIn
-    outDir = qOut
+peakDir = qIn
+outDir = qOut
+with concurrent.futures.ProcessPoolExecutor() as executor:
+    factors = next(os.walk(peakDir))[1]
     list(tqdm(executor.map(intersect, factors), total=len(factors)))
