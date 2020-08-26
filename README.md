@@ -41,7 +41,8 @@ Inner join each [combined targets file](#sigTargetspy) with the differential exp
 **Dependencies:** R 4.0+ and tidyverse
 
 Performs an inner join between a [list of human transcription factors](http://humantfs.ccbr.utoronto.ca/download.php) and differential expression data generated using DESeq2. Sorts the resulting dataframe by ascending log2 fold change and removes any rows with:  
->`|log2FoldChange| < 1.0` &nbsp; OR &nbsp; `padj > 0.05`
+
+    abs(log2FoldChange) < 1.0 OR padj > 0.05
 
 
 ## [normalize.py](normalize.py)
@@ -56,7 +57,8 @@ Reads bed files, ranks peaks, and assigns them each a normalized rank score (see
 **Dependencies:** Python 3.8+, tqdm, pandas, and bedtools
 
 For each transcription factor, runs:
->`bedtools intersect -a {factor} -b {cofactor} -loj` 
+
+    `bedtools intersect -a {factor} -b {cofactor} -loj` 
 
 Here, `factor` is always the focus TF's [highest quality](#qualityBedsR), [rank normalized](#normalizepy) bed file. `cofactor` iterates through the highest quality, rank normalized bed files for all TFs (including the focus TF).
 
@@ -69,10 +71,12 @@ Each row in the output files combines the chromosome, peak start, and peak end v
 For each transcription factor that exhibits [significant differential expression](#mergeDEandTFR), this reads the [Cistrome ChIP-Seq](http://cistrome.org/db) index file to find relevant bed files. Then, it uses a mix of [ENCODE](https://www.encodeproject.org/data-standards/terms/) and [Cistrome](http://cistrome.org/db/#/about) ChIP-Seq quality guidelines to filter and rank all bed files. 
 
 Specifically, bed files must at least meet the following criteria:
->`UniquelyMappedRatio>=0.5 && fastQC>=25 && PBC>=0.5 && PeaksUnionDHSRatio>=0.7`
+
+    UniquelyMappedRatio>=0.5 && fastQC>=25 && PBC>=0.5 && PeaksUnionDHSRatio>=0.7
 
 The passing files are then sorted (first by descending `FRiP` then by descending `PeaksFoldChangeAbove10`) before being copied to a new directory with the following structure:
->`~/goodBeds/{TF}/{rank}.bed`
+
+    ~/goodBeds/{TF}/{rank}.bed
 
 ## [sigTargets.py](sigTargets.py)
 **Dependencies:** Python 3.8+ and pandas
