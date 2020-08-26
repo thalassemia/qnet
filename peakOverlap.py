@@ -8,8 +8,8 @@ from pathlib import Path
 import concurrent.futures
 from tqdm import tqdm
 
-peakDir = "/u/scratch/s/seanchea/normalizeds/"
-outDir = "/u/scratch/s/seanchea/intersects/"
+peakDir = os.path.expandvars('$SCRATCH/tfchip/normalized/')
+outDir = os.path.expandvars('$SCRATCH/output/intersect/')
 
 def intersect(factor):
     cofactors = next(os.walk(peakDir))[1]
@@ -29,4 +29,13 @@ def intersect(factor):
 
 factors = next(os.walk(peakDir))[1]
 with concurrent.futures.ProcessPoolExecutor() as executor:
+    sigIn = peakDir + "signal/"
+    sigOut = outDir + "signal/"
+    qIn = peakDir + "q/"
+    qOut = outDir + "q/"
+    peakDir = sigIn
+    outDir = sigOut
+    list(tqdm(executor.map(intersect, factors), total=len(factors)))
+    peakDir = qIn
+    outDir = qOut
     list(tqdm(executor.map(intersect, factors), total=len(factors)))

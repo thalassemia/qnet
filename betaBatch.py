@@ -4,8 +4,8 @@ import os
 import re
 from multiprocessing import Pool
 
-peakdir = '/home/sean/peaks/'
-outdir = '/home/sean/targets/'
+peakdir = os.path.expandvars('$SCRATCH/tfchip/goodBeds/')
+outdir = os.path.expandvars('$SCRATCH/output/betaMinus/')
 
 def beta(name, root):
     args = shlex.split('BETA minus -p ' + name + ' -g hg38 -n ' + os.path.dirname(os.path.join(root, name)) + '_' + re.sub('[^0-9]', '', name) + ' -o ' + outdir)

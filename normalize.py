@@ -4,15 +4,10 @@ import glob
 import concurrent.futures
 from tqdm import tqdm
 
-peakDir = "/u/scratch/s/seanchea/goodBeds/"
-outDir = "/u/scratch/s/seanchea/normalized"
-rankBy = 6 
-if rankBy == 6:
-    outDir += "s"
-else:
-    outDir += "q"
+peakDir = os.path.expandvars("$SCRATCH/tfchip/goodBeds/")
+outDir = os.path.expandvars("$SCRATCH/tfchip/normalized/")
 
-def norm(factor, peakDir):
+def norm(factor):
     beds = glob.glob(peakDir + factor + "/*.bed")
     for a in beds:
         temp = pd.read_csv(a, sep="\t", header=None)
@@ -26,4 +21,11 @@ def norm(factor, peakDir):
 
 factors = next(os.walk(peakDir))[1]
 with concurrent.futures.ProcessPoolExecutor() as executor:
-    list(tqdm(executor.map(norm, factors, [peakDir]*len(factors)), total=len(factors)))
+    rankBy = 6
+    sigOut = outDir + "signal"
+    qOut = outDir + "q"
+    outDir = sigOut
+    list(tqdm(executor.map(norm, factors), total=len(factors)))
+    rankBy = 8
+    outDir = qOut
+    list(tqdm(executor.map(norm, factors), total=len(factors)))

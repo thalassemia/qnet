@@ -6,8 +6,8 @@ library(dendsort)
 library(RColorBrewer)
 library(fastcluster)
 
-dir <- "/u/scratch/s/seanchea/intersects/"
-outDir <- "/u/scratch/s/seanchea/cobindings/"
+intersectDir <- system("echo $SCRATCH/output/intersect/", intern = TRUE)
+outDir <- system("echo $SCRATCH/output/conbinding/", intern = TRUE)
 dir.create(outDir, showWarnings = FALSE)
 genes <- data.frame("rank" = c(1:20, 1:20), 
                     "UD" = c(rep("Down", 20), rep("Up", 20)), 
@@ -33,51 +33,54 @@ taskid <- Sys.getenv("SGE_TASK_ID")
 tfs <- c("EGR3", "IRF4", "KLF15", "NKX3-1", "FOSL1", "FOXM1", "SIX2")
 tf <- tfs[as.integer(taskid)]
 
-progress <- 0
+cobinding <- function(dir, outDir, tf) {
+  setwd(paste(dir, tf, sep=""))
+  intersectBeds <- list.files()
+  ca <- NULL
 
-setwd(file.path(dir, tf))
-intersectBeds <- list.files()
-ca <- NULL
+  progress <- 0
 
-indivProg <- 0
-
-for (bed in intersectBeds) {
-  overlap <- read_csv(bed, col_names = FALSE, col_types = "ccccc")
-  overlap <- select(overlap, c(4,5))
-  #overlap[overlap=="."] <- "0"
-  overlap[overlap=="-1.0"] <- "0"
-  overlap[,1] <- lapply(overlap[,1], parse_number)
-  overlap <- arrange(overlap, overlap[,1], overlap[,2])
-  overlap <- distinct(overlap, overlap[,1], .keep_all = TRUE) %>% t()
-  row <- shQuote(overlap[1,], type = "cmd")
-  row <- paste(row, as.character(unlist(overlap[2,])), sep="=")
-  row <- paste(row, collapse=", ")
-  temp <- eval(parse(text = paste("data.frame(", row, ")")))
-  ca <- rbind(ca, temp)
-  intersectBeds[intersectBeds==bed] <- strsplit(bed, "_")[[1]][2]
-  indivProg <- indivProg + 1
-  print(paste(indivProg/length(intersectBeds)*100, "%", sep=""))
+  for (bed in intersectBeds) {
+    overlap <- read_csv(bed, col_names = FALSE, col_types = "ccccc")
+    overlap <- select(overlap, c(4,5))
+    #overlap[overlap=="."] <- "0"
+    overlap[overlap=="-1.0"] <- "0"
+    overlap[,1] <- lapply(overlap[,1], parse_number)
+    overlap <- arrange(overlap, overlap[,1], overlap[,2])
+    overlap <- distinct(overlap, overlap[,1], .keep_all = TRUE) %>% t()
+    row <- shQuote(overlap[1,], type = "cmd")
+    row <- paste(row, as.character(unlist(overlap[2,])), sep="=")
+    row <- paste(row, collapse=", ")
+    temp <- eval(parse(text = paste("data.frame(", row, ")")))
+    ca <- rbind(ca, temp)
+    intersectBeds[intersectBeds==bed] <- strsplit(bed, "_")[[1]][2]
+    progress <- progress + 1
+    print(paste(progress/length(intersectBeds)*100, "%", sep=""))
+  }
+  rownames(ca) <- intersectBeds
+  rm(overlap, temp, row, bed, intersectBeds)
+  print(paste("Generating heatmap for", tf))
+  print("Without heatmap")
+  print(gc(full=TRUE))
+  png(paste(outDir,tf,".png", sep=""), width=1200, height=1000)
+  pheatmap(
+    mat               = as.matrix(ca),
+    cluster_cols      = sort_hclust(hclust.vector(t(ca), method="ward")),
+    cluster_rows      = sort_hclust(hclust.vector(ca, method="ward")),
+    fontsize          = 20,
+    treeheight_row    = 0, 
+    treeheight_col    = 0,
+    show_colnames     = F,
+    fontsize_row      = 7,
+    main              = paste(tf, " Co-Binding Map (", genes$UD[genes$name==tf], " #", genes$rank[genes$name==tf], ")", sep=""),
+    color             = colorRampPalette(brewer.pal(9,"Reds"))(400))
+  dev.off()
+  print("Heatmap done and with matrix")
+  print(gc(full=TRUE))
+  rm(ca)
+  print("Heatmap done without matrix")
+  print(gc(full=TRUE))
 }
-rownames(ca) <- intersectBeds
-rm(overlap, temp, row, bed, intersectBeds)
-print(paste("Generating heatmap for", tf))
-print("Without heatmap")
-print(gc(full=TRUE))
-png(paste(outDir,tf,".png", sep=""), width=1200, height=1000)
-pheatmap(
-  mat               = as.matrix(ca),
-  cluster_cols      = sort_hclust(hclust.vector(t(ca), method="ward")),
-  cluster_rows      = sort_hclust(hclust.vector(ca, method="ward")),
-  fontsize          = 20,
-  treeheight_row    = 0, 
-  treeheight_col    = 0,
-  show_colnames     = F,
-  fontsize_row      = 7,
-  main              = paste(tf, " Co-Binding Map (", genes$UD[genes$name==tf], " #", genes$rank[genes$name==tf], ")", sep=""),
-  color             = colorRampPalette(brewer.pal(9,"Reds"))(400))
-dev.off()
-print("Heatmap done and with matrix")
-print(gc(full=TRUE))
-rm(ca)
-print("Heatmap done without matrix")
-print(gc(full=TRUE))
+
+cobinding(paste(dir, "signal", sep=""), paste(outDir, "signal", sep=""), tf)
+cobinding(paste(dir, "q", sep=""), paste(outDir, "q", sep=""), tf)
