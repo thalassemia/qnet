@@ -12,7 +12,7 @@ index$rank <- rownames(index)
 
 de <- read_csv(deTFPath) %>% rename(Factor = gene_name) %>% filter(padj <= 0.05)
 factors <- inner_join(index, de, by="Factor") %>% select(DCid, Factor, rank)
-de[str_detect(factors$Factor, fixed(Factor), negate=TRUE),] %>% write_csv(paste(outDir, "nodata.csv", sep=""))
+anti_join(de, index, by="Factor") %>% select(Factor) %>% write_csv(paste(outDir, "nodata.csv", sep=""))
 factors %>% write_csv(paste(outDir, "key.csv", sep=""))
 
 for (row in 1:nrow(factors)) {
