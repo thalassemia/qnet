@@ -6,7 +6,7 @@ library(dendsort)
 
 detargets = system("echo $SCRATCH/output/detargets", intern = TRUE)
 outDir = system("echo $SCRATCH/output/", intern = TRUE)
-dir.create(outDir, warnings=FALSE)
+dir.create(outDir, showWarnings=FALSE)
 setwd(detargets)
 
 tfs <- list.files(detargets)
