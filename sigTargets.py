@@ -17,11 +17,11 @@ def gene_name(file):
 def unique_targets(files, gene):
     targets = []
     for filename in files:
-        df = pd.read_csv(filename, sep='\t', index_col=None, header=0)
+        df = pd.read_csv(filename, sep='\t', index_col=None, skip_blank_lines=False, skiprows=[0,1,2,3])
         targets.append(df)
     frame = pd.concat(targets, axis=0, ignore_index=True)
     frame = frame.drop_duplicates('GeneSymbol')
-    frame.sort_values(by='Score', inplace=True)
+    frame.sort_values(by='Score', ascending=False, inplace=True)
     os.makedirs(outdir, exist_ok=True)
     #frame.to_csv(outdir + gene[0] + '_' + gene[1] + '.csv', sep='\t', index=False)
     frame.to_csv(outdir + gene + '.csv', sep='\t', index=False)
