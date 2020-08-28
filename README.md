@@ -34,7 +34,7 @@ Creates dataframes combining all [rank normalized](#normalizepy), [peak overlapp
 ## [deTargets.R](deTargets.R)
 **Dependencies:** R 4.0+ and tidyverse
 
-Inner join each [combined targets file](#sigTargetspy) with the differential expression data.
+Inner joins each [combined targets file](#sigTargetspy) with differential expression data generated using DESeq2.
 
 
 ## [mergeDEandTF.R](mergeDEandTF.R)
@@ -94,8 +94,8 @@ Outputs in a new directory with the following naming scheme:
 
     $SCRATCH/output/enrich/{updown}{threshold}{type}
 
-`updown`: "Up" for TFs upregulated with quiescence, "Down" otherwise  
+`updown`: "Up" for group of TFs upregulated with quiescence, "Down" for group of TFs downregulated with quiescence  
 `threshold`: score threshold (see regulatory potential formula in [PMC4135175](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4135175/) for more details) used to subset targets  
 `type`: "count" for target count data files, "matrix" for enrichment matrices, or "heatmap" for heatmaps
 
-<sup>\*</sup>Zeros are excluded in these calculations
+<sup>\*</sup> Zeros are excluded in these calculations
