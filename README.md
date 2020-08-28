@@ -24,7 +24,7 @@ Runs BETA minus (hg38) on input bed files to generate lists of potential targets
 
 
 ## [cobinding.R](cobinding.R)
-_**Note:** Designed to run as a job array with 2 cores for each job_
+_**Note:** Designed to run as a job array with 2 cores for each job (~6GB RAM/core)_
 
 **Dependencies:** R 4.0+, tidyverse, pheatmap, dendsort, RColorBrewer, fastcluster
 
@@ -90,7 +90,7 @@ For each transcription factor, this consolidates all [BETA target predictions](#
 
 TFs are split into two groups, one for those that are upregulated with quiescence and for for those that are downregulated. All putative targets for all TFs in each group are consolidated at various score thresholds (which represent BETA's confidence that a given target is a true target). 
 
-_**Note:** Use as many cores as the number of thresholds to minimize run time_
+_**Note:** Use as many cores as the number of thresholds to minimize run time (~4GB RAM/core)_
 
 For each group and each score threshold, a matrix of `log2 Fold Changes` is compiled using the TFs as rows and [all putative targets](#sigtargetspy) as columns and a heatmap is generated. Finally, lists are made showing the ranks of the TFs when sorted by descending # of upregulated targets, # of downregulated targets, ratio of up to downregulated targets, mean<sup>\*</sup> target enrichment, 5<sup>th</sup> %ile<sup>\*</sup> target enrichment, and 95<sup>th</sup> %ile<sup>\*</sup> target enrichment.
 
