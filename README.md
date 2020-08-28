@@ -13,7 +13,7 @@ _**All code was designed to be run on the Hoffman2 cluster**_
 9. [targetEnrichment.R](#targetEnrichmentR)
 
 
-## [Overview](https://miro.com/app/board/o9J_kmhzx0k=/?moveToWidget=3074457349533383144&cot=12)
+## [Overview](https://miro.com/app/board/o9J_km5-viQ=/)
 ![Workflow](workflow.png)
 
 
