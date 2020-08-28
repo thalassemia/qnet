@@ -53,7 +53,7 @@ cobinding <- function(tf, intersectDir, outDir) {
   rm(overlap, temp, row, bed, intersectBeds)
   print(paste("Generating heatmap for", tf, basename(outDir)))
   gc(full=TRUE)
-  png(paste(outDir,tf,".png", sep=""), width=5, height=5, units="in", res=1000, pointsize=12)
+  pdf(paste(outDir,tf,".png", sep=""))
   pheatmap(
     mat               = as.matrix(ca),
     cluster_cols      = sort_hclust(hclust.vector(t(ca), method="ward")),
