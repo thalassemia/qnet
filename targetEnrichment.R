@@ -26,7 +26,6 @@ enrich <- function(tfs, direc, threshold) {
   matrix <- read_csv(tfs[1], col_types=cols()) %>% select(c(Score, GeneSymbol, log2FoldChange))
   matrix <- filter(matrix, Score>=threshold)
   matrix$factor <- rep(strsplit(tfs[1],".csv"), nrow(matrix))
-  print(matrix)
   
   for (tf in tfs[-1]) {
     temp <- read_csv(tf, col_types=cols()) %>% select(c(Score, GeneSymbol, log2FoldChange))
@@ -40,26 +39,34 @@ enrich <- function(tfs, direc, threshold) {
   scores <- matrix(0, length(tfs), nrow(targets))
   rownames(scores) <- unlist(strsplit(tfs,".csv"))
   colnames(scores) <- targets$GeneSymbol
-  
   for (row in 1:nrow(matrix)) {
     scores[unlist(matrix[row,4]), unlist(matrix[row,2])] = unlist(matrix[row,3])
   }
   
   count <- data.frame(up=rowSums((scores>0)*1), down=rowSums((scores<0)*1))
   rownames(count) <- unlist(strsplit(tfs,".csv"))
-  count$utod <- count$up/count$down
+  print(count)
+  print(count$up/count$down)
+  count[["Ratio of Up to Down"]] <- count$up/count$down
+  temp <- scores
+  temp[temp==0] <- NA
+  count$Mean <- rowMeans(temp,na.rm=TRUE)
+  rm(temp)
+  probabilities <- c(0.05, 0.95)
+  percentiles <- apply(scores,1,function(x) quantile(x[x!=0],probs=probabilities)) %>% t()
+  count <- cbind(count, percentiles)
   count <- arrange(count, desc(up))
-  count$uprank <- 1:nrow(count)
+  count$"Up Target Rank" <- 1:nrow(count)
   count <- arrange(count,desc(down))
-  count$downrank <- 1:nrow(count)
-  count <- arrange(count, desc(utod))
-  count$utodrank <- 1:nrow(count)
-  count$mean <- rowMeans(scores)
-  count <- arrange(count, desc(mean))
-  count$meanrank <- 1:nrow(count)
-  count$median <- apply(scores,1,median)
-  count <- arrange(count, desc(median))
-  count$medianrank <- 1:nrow(count)
+  count$"Down Target Rank" <- 1:nrow(count)
+  count <- arrange(count, desc("Ratio of Up to Down"))
+  count$"Ratio of Up to Down Rank" <- 1:nrow(count)
+  count <- arrange(count, desc(Mean))
+  count$"Mean Rank" <- 1:nrow(count)
+  for (i in colnames(percentiles)) {
+    count <- arrange(count, desc(count[[i]]))
+    count[[paste(i,"Rank")]] <- 1:nrow(count)
+  }
   write.table(count, file=paste(outDir, direc, "count", threshold,".csv",sep=""), sep=",")
   write.table(scores, file=paste(outDir, direc, "enrich", threshold,".csv", sep=""), sep=",")
   
