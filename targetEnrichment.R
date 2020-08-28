@@ -3,6 +3,7 @@ library(fastcluster)
 library(pheatmap)
 library(RColorBrewer)
 library(dendsort)
+library(parallel)
 
 detargets = system("echo $SCRATCH/output/detargets", intern = TRUE)
 outDir = system("echo $SCRATCH/output/enrich/", intern = TRUE)
@@ -91,4 +92,4 @@ enrich <- function(tfs, direc, threshold) {
     breaks            = myBreaks)
   dev.off()
 }
-map(t, direction)
+mclapply(t, direction)
