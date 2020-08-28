@@ -77,16 +77,16 @@ enrich <- function(tfs, direc, threshold) {
   sort_hclust <- function(...) as.hclust(dendsort(as.dendrogram(...)))
   clustcols <- sort_hclust(hclust.vector(t(scores), method="ward"))
   clustrows <- sort_hclust(hclust.vector(scores, method="ward"))
-  png(paste(outDir,direc,"enrich",threshold,".png", sep=""), width=3000, height=3000)
+  png(paste(outDir,direc,"enrich",threshold,".png", sep=""), width=5, height=5, units="in", res=1000, pointsize=12)
   pheatmap(
     mat               = scores,
     cluster_cols      = clustcols,
     cluster_rows      = clustrows,
-    fontsize          = 40,
+    fontsize          = 20,
     treeheight_row    = 0, 
     treeheight_col    = 0,
     show_colnames     = F,
-    fontsize_row      = 15,
+    fontsize_row      = 7,
     main              = paste("Enrichment for Putative Targets of ", direc, "regulated TFs", sep=""),
     color             = colorRampPalette(brewer.pal(11,"Spectral"))(paletteLength),
     breaks            = myBreaks)

@@ -5,9 +5,10 @@ library(pheatmap)
 library(dendsort)
 library(RColorBrewer)
 library(fastcluster)
+library(parallel)
 
-intersectDir <- system("echo $SCRATCH/output/intersect/", intern = TRUE)
-outDir <- system("echo $SCRATCH/output/cobinding/", intern = TRUE)
+intDir <- system("echo $SCRATCH/output/intersect/", intern = TRUE)
+oDir <- system("echo $SCRATCH/output/cobinding/", intern = TRUE)
 genes <- data.frame("rank" = c(1:20, 1:20), 
                     "UD" = c(rep("Down", 20), rep("Up", 20)), 
                     "name" = c("DLX2", "DLX1", "DLX3", "ZNF695", "ATOH8", "MYB", 
@@ -25,7 +26,7 @@ tfchunks <- split(genes, sample(1:40))
 genes <- tfchunks[[taskid]]
 rm(tfchunks, taskid)
 
-cobinding <- function(tf) {
+cobinding <- function(tf, intersectDir, outDir) {
   setwd(paste(intersectDir, tf, sep=""))
   intersectBeds <- list.files()
   ca <- NULL
@@ -35,7 +36,6 @@ cobinding <- function(tf) {
   for (bed in intersectBeds) {
     overlap <- read_csv(bed, col_names = FALSE, col_types = "ccccc")
     overlap <- select(overlap, c(4,5))
-    #overlap[overlap=="."] <- "0"
     overlap[overlap=="-1.0"] <- "0"
     overlap[,1] <- lapply(overlap[,1], parse_number)
     overlap <- arrange(overlap, overlap[,1], overlap[,2])
@@ -47,14 +47,13 @@ cobinding <- function(tf) {
     ca <- rbind(ca, temp)
     intersectBeds[intersectBeds==bed] <- strsplit(bed, "_")[[1]][2]
     progress <- progress + 1
-    print(paste(progress/length(intersectBeds)*100, "%", sep=""))
+    print(paste("Loading beds for", tf, basename(outDir), progress/length(intersectBeds)*100, "%"))
   }
   rownames(ca) <- intersectBeds
   rm(overlap, temp, row, bed, intersectBeds)
-  print(paste("Generating heatmap for", tf))
-  print("Without heatmap")
-  print(gc(full=TRUE))
-  pdf(paste(outDir,tf,".png", sep=""))
+  print(paste("Generating heatmap for", tf, basename(outDir)))
+  gc(full=TRUE)
+  png(paste(outDir,tf,".png", sep=""), width=5, height=5, units="in", res=1000, pointsize=12)
   pheatmap(
     mat               = as.matrix(ca),
     cluster_cols      = sort_hclust(hclust.vector(t(ca), method="ward")),
@@ -67,30 +66,40 @@ cobinding <- function(tf) {
     main              = paste(tf, " Co-Binding Map (", genes$UD[genes$name==tf], " #", genes$rank[genes$name==tf], ")", sep=""),
     color             = colorRampPalette(brewer.pal(9,"Reds"))(400))
   dev.off()
-  print("Heatmap done and with matrix")
-  print(gc(full=TRUE))
   rm(ca)
-  print("Heatmap done without matrix")
-  print(gc(full=TRUE))
+  gc(full=TRUE)
 }
 
-sigDir <- paste(intersectDir, "signal/", sep="")
-qDir <- paste(intersectDir, "qval/", sep="")
-sigOut <- paste(outDir, "signal/", sep="")
-qOut <- paste(outDir, "qval/", sep="")
-intersectDir <- sigDir
-outDir <- sigOut
-tfs <- list.files(intersectDir)
-tf <- tfs[tfs %in% genes$name]
-rm(tfs)
-stopifnot(!is.null(tf))
-dir.create(outDir, showWarnings = FALSE, recursive = TRUE)
-cobinding(tf)
-intersectDir <- qDir
-outDir <- qOut
-tfs <- list.files(intersectDir)
-tf <- tfs[tfs %in% genes$name]
-rm(tfs)
-stopifnot(!is.null(tf))
-dir.create(outDir, showWarnings = FALSE, recursive = TRUE)
-cobinding(tf)
+# sigDir <- paste(intersectDir, "signal/", sep="")
+# qDir <- paste(intersectDir, "qval/", sep="")
+# sigOut <- paste(outDir, "signal/", sep="")
+# qOut <- paste(outDir, "qval/", sep="")
+# intersectDir <- sigDir
+# outDir <- sigOut
+# tfs <- list.files(intersectDir)
+# tf <- tfs[tfs %in% genes$name]
+# rm(tfs)
+# stopifnot(!is.null(tf))
+# dir.create(outDir, showWarnings = FALSE, recursive = TRUE)
+# cobinding(tf)
+# intersectDir <- qDir
+# outDir <- qOut
+# tfs <- list.files(intersectDir)
+# tf <- tfs[tfs %in% genes$name]
+# rm(tfs)
+# stopifnot(!is.null(tf))
+# dir.create(outDir, showWarnings = FALSE, recursive = TRUE)
+# cobinding(tf)
+unpack <- function(x) {
+  factors <- list.files(x[1])
+  factor <- factors[factors %in% genes$name]
+  rm(factors)
+  dir.create(x[2], showWarnings = FALSE, recursive = TRUE)
+  cobinding(factor, x[1], x[2])
+}
+
+dirs <- NULL
+dirs[[1]] <- c(paste(intDir, "signal/", sep=""), paste(oDir, "signal/", sep=""))
+dirs[[2]] <- c(paste(intDir, "qval/", sep=""), paste(oDir, "qval/", sep=""))
+mclapply(dirs, unpack)
+
