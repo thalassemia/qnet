@@ -1,5 +1,5 @@
 # TFs and Quiescence
-
+_**All code was designed to be run on the Hoffman2 cluster**_
 
 ## Table of Contents
 1. [Overview](#Overview)
@@ -24,7 +24,7 @@ Runs BETA minus (hg38) on input bed files to generate lists of potential targets
 
 
 ## [cobinding.R](cobinding.R)
-_**Note:** Designed to run as a job array on Hoffman2 Cluster_
+_**Note:** Designed to run as a job array_
 
 **Dependencies:** R 4.0+, tidyverse, pheatmap, dendsort, RColorBrewer, fastcluster
 
@@ -50,7 +50,7 @@ Performs an inner join between a [list of human transcription factors](http://hu
 
 Reads bed files, ranks peaks, and assigns them each a normalized rank score (see section C.2.2 in [supplementary paper](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4154057/bin/NIHMS541492-supplement-Supplementary_Material.pdf) to [PMC4154057](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4154057/)) equal to `(R-r)/(R-1)`, where `r` is the rank of each peak in the total set of `R` peaks. Output files only retain columns for the chromosome, peak start, peak end, and normalized rank.
 
-<sup>*</sup> Output files are ranked by descending signal value (enrichment) in `~/tfchip/normalize/signal/` and by ascending q value (p-adjusted) in `~/tfchip/normalize/qval/`.
+**Note:** Output files are ranked by descending signal value (enrichment) in `$SCRATCH/tfchip/normalize/signal/` and by ascending q value (p-adjusted) in `$SCRATCH/tfchip/normalize/qval/`.
 
 
 ## [peakOverlap.py](peakOverlap.py)
@@ -60,7 +60,8 @@ For each transcription factor, runs:
 
     bedtools intersect -a {factor} -b {cofactor} -loj
 
-Here, `factor` is always the focus TF's [highest quality](#qualityBedsR), [rank normalized](#normalizepy) bed file. `cofactor` iterates through the highest quality, rank normalized bed files for all TFs (including the focus TF).
+`factor`: the focus TF's [highest quality](#qualityBedsR), [rank normalized](#normalizepy) bed file  
+`cofactor`: any highest quality, rank normalized bed file (including the focus TF's)
 
 Each row in the output files combines the chromosome, peak start, and peak end values of each peak in `factor` with the normalized rank of the overlapping peak in `cofactor` (-1 if no overlap; write multiple rows if more than one overlap).
 
@@ -76,7 +77,7 @@ Specifically, bed files must at least meet the following criteria:
 
 The passing files are then sorted (first by descending `FRiP` then by descending `PeaksFoldChangeAbove10`) before being copied to a new directory with the following structure:
 
-    ~/goodBeds/{TF}/{rank}.bed
+    $SCRATCH/goodBeds/{TF}/{rank}.bed
 
 ## [sigTargets.py](sigTargets.py)
 **Dependencies:** Python 3.8+ and pandas
@@ -87,4 +88,12 @@ For each transcription factor, this consolidates all [BETA target predictions](#
 ## [targetEnrichment.R](targetEnrichment.R)
 **Dependencies:** R 4.0+, tidyverse, fastcluster, pheatmap, RColorBrewer
 
-This creates a matrix of `log2 Fold Changes` using TFs as rows and [all putative targets](#sigtargetspy) as columns. It also plots a heatmap of this matrix. Finally, it creates lists ranking TFs by # of up/downregulated targets, as well as by mean/median enrichment.
+TFs are split into two groups, one for those that are upregulated with quiescence and for for those that are downregulated. All putative targets for all TFs in each group are consolidated at various score thresholds (which represent BETA's confidence that a given target is a true target). For each group and each score threshold, a matrix of `log2 Fold Changes` is compiled using the TFs as rows and [all putative targets](#sigtargetspy) as columns and a heatmap is generated. Finally, lists are made showing the ranks of the TFs when sorted by descending # of upregulated targets, # of downregulated targets, ratio of up to downregulated targets, mean target enrichment, and median target enrichment.
+
+Outputs in a new directory with the follow naming scheme:
+
+    $SCRATCH/output/enrich/{updown}{threshold}{type}
+
+`updown`: "Up" for TFs upregulated with quiescence, "Down" otherwise  
+`threshold`: score threshold (see regulatory potential formula in [PMC4135175](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4135175/) for more details) used to subset targets  
+`type`: "count" for target count data files, "matrix" for enrichment matrices, or "heatmap" for heatmaps
