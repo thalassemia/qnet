@@ -9,8 +9,9 @@ _**All code was designed to be run on the Hoffman2 cluster with as many cores as
 5. [mergeDEandTF.R](#mergeDEandTFR)
 6. [normalize.py](#normalizepy)
 7. [peakOverlap.py](#peakOverlappy)
-8. [sigTargets.py](#sigTargetspy)
-9. [targetEnrichment.R](#targetEnrichmentR)
+8. [qualityBeds.R](#qualityBedsR)
+9. [sigTargets.py](#sigTargetspy)
+10. [targetEnrichment.R](#targetEnrichmentR)
 
 
 ## [Overview](https://miro.com/app/board/o9J_km5-viQ=/)
@@ -24,7 +25,7 @@ Runs BETA minus (hg38) on input bed files to generate lists of potential targets
 
 
 ## [cobinding.R](cobinding.R)
-_**Note:** Designed to run as a job array with 2 cores for each job (~6GB RAM/core)_
+_**Note:** Designed to run as a job array with 2 cores for each job (~4GB RAM/core)_
 
 **Dependencies:** R 4.0+, tidyverse, pheatmap, dendsort, RColorBrewer, fastcluster
 
@@ -88,11 +89,11 @@ For each transcription factor, this consolidates all [BETA target predictions](#
 ## [targetEnrichment.R](targetEnrichment.R)
 **Dependencies:** R 4.0+, tidyverse, fastcluster, pheatmap, RColorBrewer
 
-TFs are split into two groups, one for those that are upregulated with quiescence and for for those that are downregulated. All putative targets for all TFs in each group are consolidated at various score thresholds (which represent BETA's confidence that a given target is a true target). 
+TFs are split into two groups, one for those that are upregulated with quiescence and one for those that are downregulated. All putative targets for all TFs in each group are consolidated at various [score](#betaBatchpy) thresholds (which represent BETA's confidence that a given target is a true target). 
 
 _**Note:** Use as many cores as the number of thresholds to minimize run time (~4GB RAM/core)_
 
-For each group and each score threshold, a matrix of `log2 Fold Changes` is compiled using the TFs as rows and [all putative targets](#sigtargetspy) as columns and a heatmap is generated. Finally, lists are made showing the ranks of the TFs when sorted by descending # of upregulated targets, # of downregulated targets, ratio of up to downregulated targets, mean<sup>\*</sup> target enrichment, 5<sup>th</sup> %ile<sup>\*</sup> target enrichment, and 95<sup>th</sup> %ile<sup>\*</sup> target enrichment.
+For each group and each score threshold, a matrix of `log2 Fold Changes` is compiled using the TFs in the group as rows and [all putative targets](#sigtargetspy) at that threshold as columns. A heatmap is generated using that matrix. Finally, a file is made listing ranks of the TFs when sorted by descending # of targets that go up with quiescence, # of targets that go down, ratio of # of up to # of downregulated targets, mean<sup>\*</sup> target enrichment with quiescence, 5<sup>th</sup> %ile<sup>\*</sup> target enrichment, and 95<sup>th</sup> %ile<sup>\*</sup> target enrichment.
 
 Outputs in a new directory with the following naming scheme:
 
@@ -100,6 +101,6 @@ Outputs in a new directory with the following naming scheme:
 
 `updown`: "Up" for group of TFs upregulated with quiescence, "Down" for group of TFs downregulated with quiescence  
 `threshold`: score threshold (see regulatory potential formula in [PMC4135175](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4135175/) for more details) used to subset targets  
-`type`: "count" for target count data files, "matrix" for enrichment matrices, or "heatmap" for heatmaps
+`type`: "count" for target count statistics, "matrix" for enrichment matrices, or "heatmap" for heatmaps
 
-<sup>\*</sup> Zeros are excluded in these calculations
+<sup>\*</sup> Zeros are excluded in these calculations as they represent non-targets for any given TF
