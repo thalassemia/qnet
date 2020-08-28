@@ -90,7 +90,7 @@ For each transcription factor, this consolidates all [BETA target predictions](#
 
 TFs are split into two groups, one for those that are upregulated with quiescence and for for those that are downregulated. All putative targets for all TFs in each group are consolidated at various score thresholds (which represent BETA's confidence that a given target is a true target). For each group and each score threshold, a matrix of `log2 Fold Changes` is compiled using the TFs as rows and [all putative targets](#sigtargetspy) as columns and a heatmap is generated. Finally, lists are made showing the ranks of the TFs when sorted by descending # of upregulated targets, # of downregulated targets, ratio of up to downregulated targets, mean<sup>\*</sup> target enrichment, 5%ile<sup>\*</sup> target enrichment, and 95%ile<sup>\*</sup> target enrichment.
 
-Outputs in a new directory with the follow naming scheme:
+Outputs in a new directory with the following naming scheme:
 
     $SCRATCH/output/enrich/{updown}{threshold}{type}
 
@@ -98,4 +98,4 @@ Outputs in a new directory with the follow naming scheme:
 `threshold`: score threshold (see regulatory potential formula in [PMC4135175](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4135175/) for more details) used to subset targets  
 `type`: "count" for target count data files, "matrix" for enrichment matrices, or "heatmap" for heatmaps
 
-<sup>\*</sup> Zeros excluded in these calculations
+<sup>\*</sup>Zeros are excluded in these calculations
