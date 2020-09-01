@@ -6,6 +6,7 @@ from tqdm import tqdm
 
 peakDir = os.path.expandvars("$SCRATCH/tfchip/goodBeds/")
 outDir = os.path.expandvars("$SCRATCH/tfchip/normalized/")
+cores = 8
 
 def norm(factor):
     beds = glob.glob(peakDir + factor + "/*.bed")
@@ -24,9 +25,9 @@ rankBy = 6
 sigOut = outDir + "signal"
 qOut = outDir + "qval"
 outDir = sigOut
-with concurrent.futures.ProcessPoolExecutor() as executor:
+with concurrent.futures.ProcessPoolExecutor(cores) as executor:
     list(tqdm(executor.map(norm, factors), total=len(factors)))
 rankBy = 8
 outDir = qOut
-with concurrent.futures.ProcessPoolExecutor() as executor:
+with concurrent.futures.ProcessPoolExecutor(cores) as executor:
     list(tqdm(executor.map(norm, factors), total=len(factors)))

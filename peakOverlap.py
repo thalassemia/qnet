@@ -10,6 +10,7 @@ from tqdm import tqdm
 
 peakDir = os.path.expandvars('$SCRATCH/tfchip/normalized/')
 outDir = os.path.expandvars('$SCRATCH/output/intersect/')
+cores = 8
 
 def intersect(factor):
     cofactors = next(os.walk(peakDir))[1]
@@ -33,11 +34,11 @@ qIn = peakDir + "qval/"
 qOut = outDir + "qval/"
 peakDir = sigIn
 outDir = sigOut
-with concurrent.futures.ProcessPoolExecutor() as executor:
+with concurrent.futures.ProcessPoolExecutor(cores) as executor:
     factors = next(os.walk(peakDir))[1]
     list(tqdm(executor.map(intersect, factors), total=len(factors)))
 peakDir = qIn
 outDir = qOut
-with concurrent.futures.ProcessPoolExecutor() as executor:
+with concurrent.futures.ProcessPoolExecutor(cores) as executor:
     factors = next(os.walk(peakDir))[1]
     list(tqdm(executor.map(intersect, factors), total=len(factors)))

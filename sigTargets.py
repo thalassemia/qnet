@@ -6,6 +6,7 @@ import pandas as pd
 
 indir = os.path.expandvars('$SCRATCH/output/betaMinus/')
 outdir = os.path.expandvars('$SCRATCH/output/targets/')
+cores = 8
 
 def gene_name(file):
     filename = file.split('/')[-1]
@@ -28,7 +29,7 @@ def unique_targets(files, gene):
 
 files = glob.glob(indir + '*targets.txt')
 
-with concurrent.futures.ProcessPoolExecutor() as executor:
+with concurrent.futures.ProcessPoolExecutor(cores) as executor:
     genes = set(executor.map(gene_name, files))
     gene_files = []
     for gene in genes:

@@ -1,5 +1,5 @@
 # TFs and Quiescence
-_**All code was designed to be run on the Hoffman2 cluster with as many cores as possible for Python scripts (~2GB RAM/core) and one core for R scripts (~4GB RAM) unless otherwise specified.**_
+_**All code was designed to be run on the Hoffman2 cluster with 8 cores for Python scripts (~2GB RAM/core) and one core for R scripts (~4GB RAM) unless otherwise specified.**_
 
 ## Table of Contents
 1. [Overview](#Overview)
@@ -91,7 +91,7 @@ For each transcription factor, this consolidates all [BETA target predictions](#
 
 TFs are split into two groups, one for those that are upregulated with quiescence and one for those that are downregulated. All putative targets for all TFs in each group are consolidated at various [score](#betaBatchpy) thresholds (which represent BETA's confidence that a given target is a true target). 
 
-_**Note:** Use as many cores as the number of thresholds to minimize run time (~4GB RAM/core)_
+_**Note:** Use as many cores as the desired number of thresholds to minimize run time (~4GB RAM/core)_
 
 For each group and each score threshold, a matrix of `log2 Fold Changes` is compiled using the TFs in the group as rows and [all putative targets](#sigtargetspy) at that threshold as columns. A heatmap is generated using that matrix. Finally, a file is made listing ranks of the TFs when sorted by descending # of targets that go up with quiescence, # of targets that go down, ratio of # of up to # of downregulated targets, mean<sup>\*</sup> target enrichment with quiescence, 5<sup>th</sup> %ile<sup>\*</sup> target enrichment, and 95<sup>th</sup> %ile<sup>\*</sup> target enrichment.
 

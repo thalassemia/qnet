@@ -6,6 +6,7 @@ from multiprocessing import Pool
 
 peakdir = os.path.expandvars('$SCRATCH/tfchip/goodBeds/')
 outdir = os.path.expandvars('$SCRATCH/output/betaMinus/')
+cores = 8
 
 def beta(name, root):
     args = shlex.split('BETA minus -p ' + name + ' -g hg38 -n ' + os.path.dirname(os.path.join(root, name)) + '_' + re.sub('[^0-9]', '', name) + ' -o ' + outdir)
@@ -24,5 +25,5 @@ names.remove("nodata.csv")
 names.remove("key.csv")
 roots.remove(peakdir)
 roots.remove(peakdir)
-p = Pool()
+p = Pool(cores)
 p.map(unpack, zip(names, roots))
