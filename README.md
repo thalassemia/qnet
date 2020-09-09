@@ -6,12 +6,14 @@ _**All code was designed to be run on the Hoffman2 cluster with 8 cores for Pyth
 2. [betaBatch.py](#betaBatchpy)
 2. [cobinding.R](#cobindingR)
 4. [deTargets.R](#deTargetsR)
-5. [mergeDEandTF.R](#mergeDEandTFR)
-6. [normalize.py](#normalizepy)
-7. [peakOverlap.py](#peakOverlappy)
-8. [qualityBeds.R](#qualityBedsR)
-9. [sigTargets.py](#sigTargetspy)
-10. [targetEnrichment.R](#targetEnrichmentR)
+5. [H4K20me3.py](#H4K20me3py)
+6. [mergeDEandTF.R](#mergeDEandTFR)
+7. [normalize.py](#normalizepy)
+8. [peakOverlap.py](#peakOverlappy)
+9. [qualityBeds.R](#qualityBedsR)
+10. [sigTargets.py](#sigTargetspy)
+11. [targetEnrichment.R](#targetEnrichmentR)
+12. [Detailed Log](#detailedlog)
 
 
 ## [Overview](https://miro.com/app/board/o9J_km5-viQ=/)
@@ -23,20 +25,45 @@ _**All code was designed to be run on the Hoffman2 cluster with 8 cores for Pyth
 
 Runs BETA minus (hg38) on input bed files to generate lists of potential targets ranked by regulatory potential as it is defined in [PMC4135175](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4135175/).
 
+**Used to:** Generate ranked lists of putative targets for each [high quality](#qualityBedsR) [human TF](http://humantfs.ccbr.utoronto.ca/) peak file in the [Cistrome database](http://cistrome.org/db/#/).
+
 
 ## [cobinding.R](cobinding.R)
 _**Note:** Designed to run as a job array with 2 cores for each job (~4GB RAM/core)_
 
 **Dependencies:** R 4.0+, tidyverse, pheatmap, dendsort, RColorBrewer, fastcluster
 
-Creates dataframes combining all [rank normalized](#normalizepy), [peak overlapped](#peakOverlappy) bed files for each highly up/downregulated TF. After clustering using the incredibly memory efficient [fastcluster](http://danifold.net/fastcluster.html) library, it creates cobinding heatmaps as seen in [PMC4154057](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4154057/).
+Creates separate dataframes for each highly enriched or depleted TF by concatenating all the [rank normalized](#normalizepy), [peak overlapped](#peakOverlappy) bed files for that individual TF. After performing hierarchical clustering on both the rows and columns (Euclidean distance, Ward linkage) using the incredibly memory efficient [fastcluster](http://danifold.net/fastcluster.html) library, it creates cobinding heatmaps as seen in [PMC4154057](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4154057/). 
 
+For each heatmap, the titular TF is the so-called "focus factor" for that graphic. The value at a given row (potential cobinding factor) and column (focus factor peak) is the rank normalized score of the potential cobinding factor peak that overlaps with the focus factor peak. If no overlapping peak exists, a score of 0 is assigned. If multiple overlapping peaks exist, the highest score among them is assigned.
 
 ## [deTargets.R](deTargets.R)
 **Dependencies:** R 4.0+ and tidyverse
 
 Inner joins each [combined targets file](#sigTargetspy) with differential expression data generated using DESeq2.
 
+## [H4K20me3.py](H4K20me3.py)
+**Dependencies:** Python 3.8+, tqdm, and pandas
+
+Isolates all bed files in [Cistrome database](http://cistrome.org/db/#/) corresponding to H4K20me3-targeting experiments and merges all peaks within a specified distance to create a single file of with, hopefully, all unique binding sites. The columns for the resulting file are chromosome, start, end, and number of peaks merged to create that final listing.
+
+Then, uses [UROPA](https://www.nature.com/articles/s41598-017-02464-y#Sec2) to annotate each peak with the nearest protein coding gene. The tool also produces some nice summary graphs in a pdf file. The `json` file is configured as below:
+
+    {
+        "queries": [
+            {
+            "feature": "gene",
+            "feature.anchor": "start",
+            "distance": 3000,
+            "filter.attribute": "gene_type",
+            "attribute.value": "protein_coding"
+            }
+        ],
+        "show_attributes": "gene_name",
+        "gtf": "Path to gencode.v35.annotation.gtf",
+        "bed": "Path to merged peak file",
+        "threads": 8
+    }
 
 ## [mergeDEandTF.R](mergeDEandTF.R)
 **Dependencies:** R 4.0+ and tidyverse
@@ -49,7 +76,7 @@ Performs an inner join between a [list of human transcription factors](http://hu
 ## [normalize.py](normalize.py)
 **Dependencies:** Python 3.8+, tqdm, and pandas
 
-Reads bed files, ranks peaks, and assigns them each a normalized rank score (see section C.2.2 in [supplementary paper](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4154057/bin/NIHMS541492-supplement-Supplementary_Material.pdf) to [PMC4154057](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4154057/)) equal to `(R-r)/(R-1)`, where `r` is the rank of each peak in the total set of `R` peaks. Output files only retain columns for the chromosome, peak start, peak end, and normalized rank.
+Reads bed files, ranks peaks, and assigns them each a normalized rank score (see section C.2.2 in [supplementary paper](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4154057/bin/NIHMS541492-supplement-Supplementary_Material.pdf) to [PMC4154057](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4154057/)) equal to `(n-r)/(n-1)`, where `r` is the rank of each peak in the total set of `n` peaks. Output files only retain columns for the chromosome, peak start, peak end, and normalized rank.
 
 **Note:** Output files are ranked by descending signal value (enrichment) in `$SCRATCH/tfchip/normalize/signal/` and by ascending q value (p-adjusted) in `$SCRATCH/tfchip/normalize/qval/`.
 
@@ -64,7 +91,7 @@ For each transcription factor, runs:
 `factor`: the focus TF's [highest quality](#qualityBedsR), [rank normalized](#normalizepy) bed file  
 `cofactor`: any highest quality, rank normalized bed file (including the focus TF's)
 
-Each row in the output files combines the chromosome, peak start, and peak end values of each peak in `factor` with the normalized rank of the overlapping peak in `cofactor` (-1 if no overlap; write multiple rows if more than one overlap).
+Each row in the output files contains the chromosome, peak start, and peak end values of a peak in `factor` and the normalized rank of the overlapping peak in `cofactor` (-1 if none found; write multiple rows if more than one found).
 
 
 ## [qualityBeds.R](qualityBeds.R)
@@ -89,18 +116,40 @@ For each transcription factor, this consolidates all [BETA target predictions](#
 ## [targetEnrichment.R](targetEnrichment.R)
 **Dependencies:** R 4.0+, tidyverse, fastcluster, pheatmap, RColorBrewer
 
-TFs are split into two groups, one for those that are upregulated with quiescence and one for those that are downregulated. All putative targets for all TFs in each group are consolidated at various [score](#betaBatchpy) thresholds (which represent BETA's confidence that a given target is a true target). 
+_**Note:** Use 7 cores (~4GB RAM/core)_
 
-_**Note:** Use as many cores as the desired number of thresholds to minimize run time (~4GB RAM/core)_
+TFs are split into two groups, one for those that are upregulated with quiescence and another for those that are downregulated. For each group, a list of unique putative targets (meaning those that show up in the BETA output of at least one TF in the group) is compiled at score thresholds of 0, 0.5, 1.0, 1.5, 2.0, 2.5, and 3.0. 
 
-For each group and each score threshold, a matrix of `log2 Fold Changes` is compiled using the TFs in the group as rows and [all putative targets](#sigtargetspy) at that threshold as columns. A heatmap is generated using that matrix. Finally, a file is made listing ranks of the TFs when sorted by descending # of targets that go up with quiescence, # of targets that go down, ratio of # of up to # of downregulated targets, mean<sup>\*</sup> target enrichment with quiescence, 5<sup>th</sup> %ile<sup>\*</sup> target enrichment, and 95<sup>th</sup> %ile<sup>\*</sup> target enrichment.
+For each group and score threshold, this creates:
+* A "target enrichment" matrix. The value displayed at any given row (TF) and column (putative target) is the SSvsP log2 fold change (l2FC) of the putative target, defaulting to 0 if the target was not predicted for the TF.
+* A heatmap of the above matrix after performing hierarchical clustering on both the rows and columns using Euclidean distance and Ward linkage. Note that the color gradient is not linear but rather centered around zero and partitioned by percentile.
+* A file containing several statistics of interest. For each TF within the group, this tabulates the # of targets that go up with quiescence, # of targets that go down with quiescence, ratio of # of targets that go up to # that go down, mean l2FC, 5<sup>th</sup> %ile l2FC, and 95<sup>th</sup> %ile l2FC. Note that all zeros were excluded when determing means and percentiles. This file also shows the ranks associated with each TF when sorting (descending) by each of the aforementioned statistics. 
 
 Outputs in a new directory with the following naming scheme:
 
     $SCRATCH/output/enrich/{updown}{threshold}{type}
 
-`updown`: "Up" for group of TFs upregulated with quiescence, "Down" for group of TFs downregulated with quiescence  
+`updown`: "Up" for group of TFs that are upregulated with quiescence, "Down" for group of TFs that are downregulated with quiescence  
 `threshold`: score threshold (see regulatory potential formula in [PMC4135175](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4135175/) for more details) used to subset targets  
-`type`: "count" for target count statistics, "matrix" for enrichment matrices, or "heatmap" for heatmaps
+`type`: "matrix" for target enrichment matrices, "heatmap" for heatmaps, or "count" for statistics of interest
 
-<sup>\*</sup> Zeros are excluded in these calculations as they represent non-targets for any given TF
+## Detailed Log
+1. Using [mergeDEandTF.R](#mergedeandtfr), I merged the provided differential expression data (serum starved vs proliferating cells) with a [curated list of human TFs](http://humantfs.ccbr.utoronto.ca/download.php) to create the file `SSvsP_SigTFs_080720.csv`. Only the TFs that exhibited significant differences in expression (DE TFs) were included in the final file.
+
+2. Using [qualityBeds.R](#qualitybedsR), I isolated the bed files in the [Cistrome database](http://cistrome.org/db/#/) that corresponded to each DE TF. These files were filtered, ranked, and renamed according to specific [quality criteria](#qualitybedsR).
+
+3. Using [betaBatch.py](#betabatchpy), I generated lists of putative targets for each high quality bed file.
+
+4. Using [sigTargets.py](#sigtargetspy), I consolidated the BETA target predictions to create a single file for each DE TF containing all unique predictions for all high quality bed files associated with that TF. These are the files in the shared Dropbox folder named `BETA_minus_output`.
+
+5. Using [deTargets.R](#detargetsR), I merged the consolidated BETA target predictions for each DE TF with the differential expression data, keeping only the predicted targets that exhibited significant differential expression. These are the files in the shared Dropbox folder named `detargets`.
+
+6. Using [targetEnrichment.R](#targetEnrichmentR), I attempted to better characterize the enrichment behaviors of the DE TF by comparing the differential expression profiles of their targets. The resulting files are in the shared Dropbox folder named `enrich`.
+
+7. Using [normalize.py](#normalizepy), I assigned a rank normalized score to each peak in each high quality DE TF bed file. I generated two output directories, one for scores assigned with peaks ranked by descending signal value and another for peaks ranked by ascending p-adjusted value (see [here](https://hbctraining.github.io/Intro-to-ChIPseq/lessons/05_peak_calling_macs.html) for more details about how MACS2 calculates these values).
+
+8. Using [peakOverlap.py](#peakoverlappy), I used `bedtools intersect` to search for overlapping peaks in every possible pairing of highest quality, rank normalized bed files (only one such file should exist for each DE TF). This also appended the rank normalized score of each peak to every row corresponding to a peak it overlaps.
+
+9. Using [cobinding.R](#cobindingR), I created heatmaps for each TF that theoretically illustrate its cobinding affinity with the other DE TFs at its experimental binding loci. These heatmaps are located within the `cobinding` folder in the Dropbox. `cobindingOLD` has these same heatmaps but as jpgs instead of pdfs. These load a lot more quickly and take up less space but have some strange visual artifacts.
+
+10. Using [H4K20me3.py](#h4k20me3py), I pulled all the H4K20me3-associated bed files from the [Cistrome database](http://cistrome.org/db/#/), merged them into one file (doing my best to combine and count duplicates), and annotated them with their nearest protein coding genes (by distance to TSS). Out of curiosity, I first configured the code to only consider directly overlapping peaks as duplicates that should be merged, then tried the same pipeline with peaks within 1000bp flagged as duplicates. These results are located in the `H4K20me3` folder, with the direct overlap files all having a filename suffix of `0` while all the 1000bp distance outputs have a filname suffix of `1000`.
