@@ -3,17 +3,19 @@ _**All code was designed to be run on the Hoffman2 cluster with 8 cores for Pyth
 
 ## Table of Contents
 1. [Overview](#Overview)
-2. [betaBatch.py](#betaBatchpy)
-2. [cobinding.R](#cobindingR)
-4. [deTargets.R](#deTargetsR)
-5. [H4K20me3.py](#H4K20me3py)
-6. [mergeDEandTF.R](#mergeDEandTFR)
-7. [normalize.py](#normalizepy)
-8. [peakOverlap.py](#peakOverlappy)
-9. [qualityBeds.R](#qualityBedsR)
-10. [sigTargets.py](#sigTargetspy)
-11. [targetEnrichment.R](#targetEnrichmentR)
-12. [Detailed Log](#detailedlog)
+1. [betaBatch.py](#betaBatchpy)
+1. [cobinding.R](#cobindingR)
+1. [deTargets.R](#deTargetsR)
+1. [fibroblast.py](#fibroblastpy)
+1. [greatBatch.R](#greatbatchR)
+1. [H4K20me3.py](#H4K20me3py)
+1. [mergeDEandTF.R](#mergeDEandTFR)
+1. [normalize.py](#normalizepy)
+1. [peakOverlap.py](#peakOverlappy)
+1. [qualityBeds.R](#qualityBedsR)
+1. [sigTargets.py](#sigTargetspy)
+1. [targetEnrichment.R](#targetEnrichmentR)
+1. [Activity Log](#Activity%20Log)
 
 
 ## [Overview](https://miro.com/app/board/o9J_km5-viQ=/)
@@ -42,12 +44,22 @@ For each heatmap, the titular TF is the so-called "focus factor" for that graphi
 
 Inner joins each [combined targets file](#sigTargetspy) with differential expression data generated using DESeq2.
 
+## [fibroblast.py](fibroblastpy)
+**Dependencies:** Python 3.8+, tqdm, and pandas
+
+Isolates all bed files for human TFs in dermal fibroblasts (though that can be configured to any other cell/tissue type) that meet the same quality criteria detailed in [qualityBeds.R](#qualitybedsR). Merges all bed files for a given TF into a single file by combining overlapping peaks into singular entries (final column shows the number of peaks combined to make a given entry).
+
+## [greatBatch.R](#greatbatchR)
+**Dependencies:** R 4.0+, rGREAT, GenomicRanges
+
+Runs each DE TF bed file through GREAT with peaks called on unassigned scaffolds removed (chromosome names GL* or KI* as described [here](https://github.com/dpryan79/ChromosomeMappings/blob/master/GRCh38_ensembl2UCSC.txt)). Outputs separate tables of enrichment information for Biological Processes, Cellular Component, and Molecular Function. Also creates a file with several key summary graphics.
+
 ## [H4K20me3.py](H4K20me3.py)
 **Dependencies:** Python 3.8+, tqdm, and pandas
 
 Isolates all bed files in [Cistrome database](http://cistrome.org/db/#/) corresponding to H4K20me3-targeting experiments and merges all peaks within a specified distance to create a single file of with, hopefully, all unique binding sites. The columns for the resulting file are chromosome, start, end, and number of peaks merged to create that final listing.
 
-Then, uses [UROPA](https://www.nature.com/articles/s41598-017-02464-y#Sec2) to annotate each peak with the nearest protein coding gene. The tool also produces some nice summary graphs in a pdf file. The `json` file is configured as below:
+Then, uses [UROPA](https://www.nature.com/articles/s41598-017-02464-y#Sec2) to annotate each peak with the nearest protein coding gene. The tool also produces some nice summary graphs in a pdf file. The UROPA `json` file is configured as below:
 
     {
         "queries": [
@@ -64,6 +76,8 @@ Then, uses [UROPA](https://www.nature.com/articles/s41598-017-02464-y#Sec2) to a
         "bed": "Path to merged peak file",
         "threads": 8
     }
+
+Additionally, this script reads the [deTargets.R](#detargetsR) output file for each DE TF and performs an inner join between those and the UROPA-annotated peak file (specifically, the one with `finalhits` in its name). It tacks on an extra column for each of these inner-joined dataframes denoting the DE TF whose targets it has used to perform this inner join. This makes it possible to distinguish which targets H4K20me3 shares with each DE TF when all of these dataframes are subsequently concatenated and written into one very long text file. To ease viewing and future data manipulation, the rows in this giant output file are first sorted alphabetically by DE TF name (so all targets for each DE TF are grouped together), then by location (from the first base pair of chromosome 1 to the last base pair of chromosome Y).
 
 ## [mergeDEandTF.R](mergeDEandTF.R)
 **Dependencies:** R 4.0+ and tidyverse
@@ -133,7 +147,7 @@ Outputs in a new directory with the following naming scheme:
 `threshold`: score threshold (see regulatory potential formula in [PMC4135175](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4135175/) for more details) used to subset targets  
 `type`: "matrix" for target enrichment matrices, "heatmap" for heatmaps, or "count" for statistics of interest
 
-## Detailed Log
+## Activity Log
 1. Using [mergeDEandTF.R](#mergedeandtfr), I merged the provided differential expression data (serum starved vs proliferating cells) with a [curated list of human TFs](http://humantfs.ccbr.utoronto.ca/download.php) to create the file `SSvsP_SigTFs_080720.csv`. Only the TFs that exhibited significant differences in expression (DE TFs) were included in the final file.
 
 2. Using [qualityBeds.R](#qualitybedsR), I isolated the bed files in the [Cistrome database](http://cistrome.org/db/#/) that corresponded to each DE TF. These files were filtered, ranked, and renamed according to specific [quality criteria](#qualitybedsR).
@@ -152,4 +166,8 @@ Outputs in a new directory with the following naming scheme:
 
 9. Using [cobinding.R](#cobindingR), I created heatmaps for each TF that theoretically illustrate its cobinding affinity with the other DE TFs at its experimental binding loci. These heatmaps are located within the `cobinding` folder in the Dropbox. `cobindingOLD` has these same heatmaps but as jpgs instead of pdfs. These load a lot more quickly and take up less space but have some strange visual artifacts.
 
-10. Using [H4K20me3.py](#h4k20me3py), I pulled all the H4K20me3-associated bed files from the [Cistrome database](http://cistrome.org/db/#/), merged them into one file (doing my best to combine and count duplicates), and annotated them with their nearest protein coding genes (by distance to TSS). Out of curiosity, I first configured the code to only consider directly overlapping peaks as duplicates that should be merged, then tried the same pipeline with peaks within 1000bp flagged as duplicates. These results are located in the `H4K20me3` folder, with the direct overlap files all having a filename suffix of `0` while all the 1000bp distance outputs have a filname suffix of `1000`.
+10. Using [greatBatch.R](#greatbatchR), I performed GO annotation on each of the DE TF bed files using the online [GREAT](http://great.stanford.edu/public/html/) tool. These results are located in the `GO` Dropbox folder.
+
+11. Using [H4K20me3.py](#h4k20me3py), I pulled all the H4K20me3-associated bed files from the [Cistrome database](http://cistrome.org/db/#/), merged them into one file (doing my best to combine and count duplicates), and annotated them with their nearest protein coding genes (by distance to TSS). Out of curiosity, I first configured the code to only consider directly overlapping peaks as duplicates that should be merged, then tried the same pipeline with peaks within 1000bp flagged as duplicates. I then merged the list of H4K20me3-associated genes with the DE TF putative target lists to create massive text files containing information about the "target genes" this histone modification shares with the DE TFs. All of these results are located in the `H4K20me3` Dropbox folder, with the direct overlap files all having a filename suffix of `0` while all the 1000bp distance outputs have a filname suffix of `1000`.
+
+12. Using [fibroblast.py](#fibroblastpy), I pulled all the Cistrome bed files corresponding to ChIP-Seq experiments done on dermal fibroblasts. For each TF, I created a file that contains all the unique peaks called across all the skin fibroblast experiments associated with that TF. These files are located in the `fibroblast` Dropbox folder.
