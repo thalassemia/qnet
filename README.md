@@ -27,9 +27,6 @@ _**All code was designed to be run on the Hoffman2 cluster with 8 cores for Pyth
 
 Runs BETA minus (hg38) on input bed files to generate lists of potential targets ranked by regulatory potential as it is defined in [PMC4135175](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4135175/).
 
-**Used to:** Generate ranked lists of putative targets for each [high quality](#qualityBedsR) [human TF](http://humantfs.ccbr.utoronto.ca/) peak file in the [Cistrome database](http://cistrome.org/db/#/).
-
-
 ## [cobinding.R](cobinding.R)
 _**Note:** Designed to run as a job array with 2 cores for each job (~4GB RAM/core)_
 
@@ -49,7 +46,7 @@ Inner joins each [combined targets file](#sigTargetspy) with differential expres
 
 Isolates all bed files for human TFs in dermal fibroblasts (though that can be configured to any other cell/tissue type) that meet the same quality criteria detailed in [qualityBeds.R](#qualitybedsR). Merges all bed files for a given TF into a single file by combining overlapping peaks into singular entries (final column shows the number of peaks combined to make a given entry).
 
-## [greatBatch.R](#greatbatchR)
+## [greatBatch.R](greatbatchR)
 **Dependencies:** R 4.0+, rGREAT, GenomicRanges
 
 Runs each DE TF bed file through GREAT with peaks called on unassigned scaffolds removed (chromosome names GL* or KI* as described [here](https://github.com/dpryan79/ChromosomeMappings/blob/master/GRCh38_ensembl2UCSC.txt)). Outputs separate tables of enrichment information for Biological Processes, Cellular Component, and Molecular Function. Also creates a file with several key summary graphics.
