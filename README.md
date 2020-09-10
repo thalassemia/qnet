@@ -41,12 +41,12 @@ For each heatmap, the titular TF is the so-called "focus factor" for that graphi
 
 Inner joins each [combined targets file](#sigTargetspy) with differential expression data generated using DESeq2.
 
-## [fibroblast.py](fibroblastpy)
+## [fibroblast.py](fibroblast.py)
 **Dependencies:** Python 3.8+, tqdm, and pandas
 
 Isolates all bed files for human TFs in dermal fibroblasts (though that can be configured to any other cell/tissue type) that meet the same quality criteria detailed in [qualityBeds.R](#qualitybedsR). Merges all bed files for a given TF into a single file by combining overlapping peaks into singular entries (final column shows the number of peaks combined to make a given entry).
 
-## [greatBatch.R](greatbatchR)
+## [greatBatch.R](greatBatch.R)
 **Dependencies:** R 4.0+, rGREAT, GenomicRanges
 
 Runs each DE TF bed file through GREAT with peaks called on unassigned scaffolds removed (chromosome names GL* or KI* as described [here](https://github.com/dpryan79/ChromosomeMappings/blob/master/GRCh38_ensembl2UCSC.txt)). Outputs separate tables of enrichment information for Biological Processes, Cellular Component, and Molecular Function. Also creates a file with several key summary graphics.
