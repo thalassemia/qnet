@@ -42,7 +42,7 @@ For each heatmap, the titular TF is the so-called "focus factor" for that graphi
 Inner joins each [combined targets file](#sigTargetspy) with differential expression data generated using DESeq2.
 
 ## [fibroblast.py](fibroblast.py)
-**Dependencies:** Python 3.8+, tqdm, and pandas
+**Dependencies:** Python 3.8+, bedtools, tqdm, and pandas
 
 Isolates all bed files for human TFs in dermal fibroblasts (though that can be configured to any other cell/tissue type) that meet the same quality criteria detailed in [qualityBeds.R](#qualitybedsR). Merges all bed files for a given TF into a single file by combining overlapping peaks into singular entries (final column shows the number of peaks combined to make a given entry).
 
@@ -52,7 +52,7 @@ Isolates all bed files for human TFs in dermal fibroblasts (though that can be c
 Runs each DE TF bed file through GREAT with peaks called on unassigned scaffolds removed (chromosome names GL* or KI* as described [here](https://github.com/dpryan79/ChromosomeMappings/blob/master/GRCh38_ensembl2UCSC.txt)). Outputs separate tables of enrichment information for Biological Processes, Cellular Component, and Molecular Function. Also creates a file with several key summary graphics.
 
 ## [H4K20me3.py](H4K20me3.py)
-**Dependencies:** Python 3.8+, tqdm, and pandas
+**Dependencies:** Python 3.8+, bedtools, tqdm, and pandas
 
 Isolates all bed files in [Cistrome database](http://cistrome.org/db/#/) corresponding to H4K20me3-targeting experiments and merges all peaks within a specified distance to create a single file of with, hopefully, all unique binding sites. The columns for the resulting file are chromosome, start, end, and number of peaks merged to create that final listing.
 
