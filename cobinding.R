@@ -8,7 +8,8 @@ library(fastcluster)
 library(parallel)
 
 intDir <- system("echo $SCRATCH/output/intersect/", intern = TRUE)
-oDir <- system("echo $SCRATCH/output/cobinding/", intern = TRUE)
+oDir <- system("echo $SCRATCH/output/cobindingAll/", intern = TRUE)
+deData <- system("echo $SCRATCH/data/deseq_SSvsP_gencodev29_allgenes_021120.txt", intern = TRUE)
 genes <- data.frame("rank" = c(1:20, 1:20), 
                     "UD" = c(rep("Down", 20), rep("Up", 20)), 
                     "name" = c("DLX2", "DLX1", "DLX3", "ZNF695", "ATOH8", "MYB", 
@@ -23,12 +24,24 @@ sort_hclust <- function(...) as.hclust(dendsort(as.dendrogram(...)))
 taskid <- Sys.getenv("SGE_TASK_ID")
 set.seed(10)
 tfchunks <- split(genes, sample(1:40))
-genes <- tfchunks[[taskid]]
-rm(tfchunks, taskid)
+split <- tfchunks[[taskid]]
+de <- read_delim(deData, "\t", col_types = cols())
 
 cobinding <- function(tf, intersectDir, outDir) {
   setwd(paste(intersectDir, tf, sep=""))
   intersectBeds <- list.files()
+  temp <- c()
+  for (i in intersectBeds) {
+    temp <- append(temp, strsplit(i, "_")[[1]][2])
+  }
+  # intersectBeds <- intersectBeds[temp %in% filter(genes, UD==split$UD[1])$name]
+  # Comment out line above and uncomment lines below to include all signicantly enriched/depleted TF's, not just those in the top 20
+  if (split$UD == "Up") {
+    intersectBeds <- intersectBeds[temp %in% filter(de, log2FoldChange > 0, padj <= 0.05)$gene_name]
+  }
+  else {
+    intersectBeds <- intersectBeds[temp %in% filter(de, log2FoldChange < 0, padj <= 0.05)$gene_name]
+  }
   ca <- NULL
 
   progress <- 0
@@ -49,25 +62,25 @@ cobinding <- function(tf, intersectDir, outDir) {
     progress <- progress + 1
     print(paste("Loading beds for", tf, basename(outDir), progress/length(intersectBeds)*100, "%"))
   }
-  rownames(ca) <- intersectBeds
-  rm(overlap, temp, row, bed, intersectBeds)
-  print(paste("Generating heatmap for", tf, basename(outDir)))
-  gc(full=TRUE)
-  pdf(paste(outDir,tf,".png", sep=""))
-  pheatmap(
-    mat               = as.matrix(ca),
-    cluster_cols      = sort_hclust(hclust.vector(t(ca), method="ward")),
-    cluster_rows      = sort_hclust(hclust.vector(ca, method="ward")),
-    fontsize          = 20,
-    treeheight_row    = 0, 
-    treeheight_col    = 0,
-    show_colnames     = F,
-    fontsize_row      = 7,
-    main              = paste(tf, " Co-Binding Map (", genes$UD[genes$name==tf], " #", genes$rank[genes$name==tf], ")", sep=""),
-    color             = colorRampPalette(brewer.pal(9,"Reds"))(400))
-  dev.off()
-  rm(ca)
-  gc(full=TRUE)
+  if (!is.null(ca)) {
+    rownames(ca) <- intersectBeds
+    print(paste("Generating heatmap for", tf, basename(outDir)))
+    pdf(paste(outDir,tf,".pdf", sep=""))
+    pheatmap(
+      mat               = as.matrix(ca),
+      cluster_cols      = sort_hclust(hclust.vector(t(ca), method="ward")),
+      cluster_rows      = sort_hclust(hclust.vector(ca, method="ward")),
+      fontsize          = 12,
+      treeheight_row    = 0, 
+      treeheight_col    = 0,
+      show_colnames     = F,
+      fontsize_row      = 10,
+      main              = paste(tf, " Co-Binding Map (", genes$UD[genes$name==tf], " #", genes$rank[genes$name==tf], ")", sep=""),
+      color             = colorRampPalette(brewer.pal(9,"Reds"))(400))
+    dev.off()
+    gc(full=TRUE)
+    rm(ca)
+  }
 }
 
 # sigDir <- paste(intersectDir, "signal/", sep="")
@@ -92,14 +105,13 @@ cobinding <- function(tf, intersectDir, outDir) {
 # cobinding(tf)
 unpack <- function(x) {
   factors <- list.files(x[1])
-  factor <- factors[factors %in% genes$name]
-  rm(factors)
+  factor <- factors[factors %in% split$name]
   dir.create(x[2], showWarnings = FALSE, recursive = TRUE)
   cobinding(factor, x[1], x[2])
 }
 
 dirs <- NULL
-dirs[[1]] <- c(paste(intDir, "signal/", sep=""), paste(oDir, "signal/", sep=""))
-dirs[[2]] <- c(paste(intDir, "qval/", sep=""), paste(oDir, "qval/", sep=""))
+dirs[[1]] <- c(paste(intDir, "signal/", sep = ""), paste(oDir, "signal/", sep = ""))
+dirs[[2]] <- c(paste(intDir, "qval/", sep = ""), paste(oDir, "qval/", sep = ""))
 mclapply(dirs, unpack)
 
