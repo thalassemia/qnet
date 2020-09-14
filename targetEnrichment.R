@@ -68,8 +68,8 @@ enrich <- function(tfs, direc, threshold) {
     count <- arrange(count, desc(count[[i]]))
     count[[paste(i,"Rank")]] <- 1:nrow(count)
   }
-  write.table(count, file=paste(outDir, direc, "count", threshold,".csv",sep=""), sep=",")
-  write.table(scores, file=paste(outDir, direc, "enrich", threshold,".csv", sep=""), sep=",")
+  write.table(count, file=paste(outDir, direc, "count", threshold,".csv",sep=""), sep=",", col.names=NA)
+  write.table(scores, file=paste(outDir, direc, "enrich", threshold,".csv", sep=""), sep=",", col.names=NA)
   
   paletteLength <- 1000
   myBreaks <- c(seq(min(scores), 0, length.out=ceiling(paletteLength/2) + 1), 
