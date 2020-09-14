@@ -16,6 +16,7 @@ bed_dir = os.path.expandvars('$SCRATCH/hmchip/human_hm')
 out_dir = os.path.expandvars('$SCRATCH/hmchip/h4k20me3')
 gtf = os.path.expandvars('$SCRATCH/gencode.v35.annotation.gtf')
 deTFtarget_dir = os.path.expandvars('$SCRATCH/output/detargets')
+deData = os.path.expandvars('$SCRATCH/data/deseq_SSvsP_gencodev29_allgenes_021120.txt')
 peakdistance = 0
 cores = 8
 
@@ -63,7 +64,7 @@ with open('query.json', 'w') as f:
     data['show_attributes'] = 'gene_name'
     data['gtf'] = gtf
     data['bed'] = os.path.join(out_dir, f'uniquepeaks{peakdistance}.csv')
-    data['threads'] = 8
+    data['threads'] = cores
     json.dump(data, f)
 command = shlex.split(f"uropa -i query.json -s")
 subprocess.run(command)
@@ -71,16 +72,28 @@ subprocess.run(command)
 # Find target overlaps with DE TFs
 peaks = pd.read_csv(f'uniquepeaks{peakdistance}_finalhits.txt', sep = '\t')
 peaks = peaks.dropna()
-peaks.to_csv(f'uniquepeaks{peakdistance}_finalhits.txt', sep = '\t')
+peaks.to_csv(f'uniquepeaks{peakdistance}_finalhits.txt', sep = '\t', index = False)
 def overlap(file):
-    targets = pd.read_csv(os.path.join(deTFtarget_dir, file), sep = '\t')
+    targets = pd.read_csv(os.path.join(deTFtarget_dir, file), sep = ',')
     targets.rename(columns = {'GeneSymbol':'gene_name'}, inplace = True)
     merged = targets.merge(peaks, on = 'gene_name')
-    merged = merged.iloc[:, [0,1,2,4,6,7,8,9,10,11,13,16,18,19]]
+    merged.rename(columns = {'#Chromsome':'Chromosome'}, inplace = True)
+    merged = merged.loc[:, ['Chromosome', 'TSS', 'TTS', 'Score', 'Strand', 'gene_name',
+        'log2FoldChange', 'padj', 'gene_type', 'peak_chr', 'peak_start', 'peak_end',
+        'distance', 'relative_location', 'feat_ovl_peak', 'peak_ovl_feat']]
     merged['deTF'] = [str.split(file, ".")[0]] * len(merged.index)
     return merged
 with concurrent.futures.ProcessPoolExecutor(cores) as executor:
     deTFtargets = os.listdir(deTFtarget_dir)
     merged = list(tqdm(executor.map(overlap, deTFtargets), total = len(deTFtargets)))
-    merged = pd.concat(merged).sort_values(['deTF', 'peak_chr', 'peak_start', 'peak_end'])
+    print(merged)
+    merged = pd.concat(merged, join='inner').sort_values(['deTF', 'peak_chr', 'peak_start', 'peak_end'])
     merged.to_csv(f'mergedtargets{peakdistance}.txt', sep = '\t', index = False)
+
+# Merge H4K20me3-annotated genes with quiescence DE data to find patterns
+de = pd.read_csv(deData, sep = '\t')
+merged = de.merge(peaks, on = 'gene_name')
+merged.rename(columns = {'#Chromsome':'Chromosome'}, inplace = True)
+merged = merged.loc[:, ['peak_chr', 'peak_start', 'peak_end', 'feat_start', 'feat_end', 'feat_strand',
+    'distance', 'relative_loaction', 'feat_ovl_peak', 'peak_ovl_feat', 'gene_name', 'log2FoldChange', 'padj']]
+merged.to_csv(f'allDE{peakdistance}.txt', sep = '\t', index = False)
