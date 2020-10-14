@@ -36,25 +36,24 @@ Creates separate dataframes for each highly enriched or depleted TF by concatena
 
 For each heatmap, the titular TF is the so-called "focus factor" for that graphic. The value at a given row (potential cobinding factor) and column (focus factor peak) is the rank normalized score of the potential cobinding factor peak that overlaps with the focus factor peak. If no overlapping peak exists, a score of 0 is assigned. If multiple overlapping peaks exist, the highest score among them is assigned.
 
+By default, heatmaps are created for each TF in the top 20 by log2 fold change DE for which there is data. The rows of the heatmaps are all DE TF's that change in the same direction as the focus factor (all enriched or all depleted with quiescence).
+
 ## [deTargets.R](deTargets.R)
 **Dependencies:** R 4.0+ and tidyverse
 
 Inner joins each [combined targets file](#sigTargetspy) with differential expression data generated using DESeq2.
 
 ## [fibroblast.py](fibroblast.py)
-<<<<<<< HEAD
 **Dependencies:** Python 3.8+, tqdm, and pandas
 
 Isolates all bed files for human TFs in dermal fibroblasts (though that can be configured to any other cell/tissue type) that meet the same quality criteria detailed in [qualityBeds.R](#qualitybedsR). Merges all bed files for a given TF into a single file by combining overlapping peaks into singular entries (final column shows the number of peaks combined to make a given entry).
 
 ## [greatBatch.R](greatbatch.R)
-=======
 **Dependencies:** Python 3.8+, bedtools, tqdm, and pandas
 
 Isolates all bed files for human TFs in dermal fibroblasts (though that can be configured to any other cell/tissue type) that meet the same quality criteria detailed in [qualityBeds.R](#qualitybedsR). Merges all bed files for a given TF into a single file by combining overlapping peaks into singular entries (final column shows the number of peaks combined to make a given entry).
 
 ## [greatBatch.R](greatBatch.R)
->>>>>>> c43d6ce19d292dd7b3fc840500862dc0357d92c8
 **Dependencies:** R 4.0+, rGREAT, GenomicRanges
 
 Runs each DE TF bed file through GREAT with peaks called on unassigned scaffolds removed (chromosome names GL* or KI* as described [here](https://github.com/dpryan79/ChromosomeMappings/blob/master/GRCh38_ensembl2UCSC.txt)). Outputs separate tables of enrichment information for Biological Processes, Cellular Component, and Molecular Function. Also creates a file with several key summary graphics.
@@ -82,7 +81,9 @@ Then, uses [UROPA](https://www.nature.com/articles/s41598-017-02464-y#Sec2) to a
         "threads": 8
     }
 
-Additionally, this script reads the [deTargets.R](#detargetsR) output file for each DE TF and performs an inner join between those and the UROPA-annotated peak file (specifically, the one with `finalhits` in its name). It tacks on an extra column for each of these inner-joined dataframes denoting the DE TF whose targets it has used to perform this inner join. This makes it possible to distinguish which targets H4K20me3 shares with each DE TF when all of these dataframes are subsequently concatenated and written into one very long text file. To ease viewing and future data manipulation, the rows in this giant output file are first sorted alphabetically by DE TF name (so all targets for each DE TF are grouped together), then by location (from the first base pair of chromosome 1 to the last base pair of chromosome Y).
+Additionally, this script reads the [deTargets.R](#detargetsR) output file for each DE TF and performs an inner join between those and the UROPA-annotated peak file (specifically, the one with `finalhits` in its name). It tacks on an extra column for each of these inner-joined dataframes denoting the DE TF whose targets it has used to perform this inner join. This makes it possible to distinguish which targets H4K20me3 shares with each DE TF when all of these dataframes are subsequently concatenated and written into one very long text file with the word `merged` in its name. To ease viewing and future data manipulation, the rows in this giant output file are first sorted alphabetically by DE TF name (so all targets for each DE TF are grouped together), then by location (from the first base pair of chromosome 1 to the last base pair of chromosome Y).
+
+Lastly, the UROPA-annotated peak file is merged with the original quiescence DE data, adding log2 fold changes and DESeq2 p-adjusted values to any genes that exhibit significant (p-adj < 0.05) differential expression.
 
 ## [mergeDEandTF.R](mergeDEandTF.R)
 **Dependencies:** R 4.0+ and tidyverse
@@ -176,3 +177,7 @@ Outputs in a new directory with the following naming scheme:
 11. Using [H4K20me3.py](#h4k20me3py), I pulled all the H4K20me3-associated bed files from the [Cistrome database](http://cistrome.org/db/#/), merged them into one file (doing my best to combine and count duplicates), and annotated them with their nearest protein coding genes (by distance to TSS). Out of curiosity, I first configured the code to only consider directly overlapping peaks as duplicates that should be merged, then tried the same pipeline with peaks within 1000bp flagged as duplicates. I then merged the list of H4K20me3-associated genes with the DE TF putative target lists to create massive text files containing information about the "target genes" this histone modification shares with the DE TFs. All of these results are located in the `H4K20me3` folder, with the direct overlap files all having a filename suffix of `0` while all the 1000bp distance outputs have a filname suffix of `1000`.
 
 12. Using [fibroblast.py](#fibroblastpy), I pulled all the Cistrome bed files corresponding to ChIP-Seq experiments done on dermal fibroblasts. For each TF, I created a file that contains all the unique peaks called across all the skin fibroblast experiments associated with that TF. These files are located in the `skin_fibroblast` folder.
+
+13. Using an updated version of [cobinding.R](#cobindingR), I created heatmaps for each DE TF that only include TF's whose expression changed in the same direction as the focus factor. These graphics are located in the `cobindingAll` folder. I did this again after further limiting the co-factors to those both change in the same direction and are within the top 20 by DE, creating the graphics in the `cobindingTop` folder.
+
+14. Using an updated version of [H4K20me3.py](#h4k20me3py), I merged the UROPA-annotated H4K20me3 peak files with DE TF BETA outputs and the original DE spreadsheet to look for trends in the DE of genes located near this histone mark, whose presence is known to increase during quiescence.
