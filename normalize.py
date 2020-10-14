@@ -4,14 +4,14 @@ import glob
 import concurrent.futures
 from tqdm import tqdm
 
-peakDir = os.path.expandvars("$SCRATCH/tfchip/goodBeds/")
-outDir = os.path.expandvars("$SCRATCH/tfchip/normalized/")
-cores = 8
+peakDir = os.path.expandvars("$SCRATCH/tfchip/goodBedsSALL2/")
+outDir = os.path.expandvars("$SCRATCH/tfchip/normalizedSALL2/")
+cores = 36
 
 def norm(factor):
     beds = glob.glob(peakDir + factor + "/*.bed")
     for a in beds:
-        temp = pd.read_csv(a, sep="\t", header=None)
+        temp = pd.read_csv(a, sep = "\t", header = None)
         temp = temp.iloc[:, [0,1,2,3,rankBy]]
         temp.sort_values(by=rankBy, ascending=False, inplace=True)
         temp.index = range(0,len(temp.index))
@@ -21,6 +21,7 @@ def norm(factor):
         temp.to_csv(os.path.join(outDir,factor,a), sep="\t", index=False, header=False)
 
 factors = next(os.walk(peakDir))[1]
+print(factors)
 rankBy = 6
 sigOut = outDir + "signal"
 qOut = outDir + "qval"

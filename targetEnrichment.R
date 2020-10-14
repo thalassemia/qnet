@@ -60,7 +60,7 @@ enrich <- function(tfs, direc, threshold) {
   count$"Up Target Rank" <- 1:nrow(count)
   count <- arrange(count,desc(down))
   count$"Down Target Rank" <- 1:nrow(count)
-  count <- arrange(count, desc("Ratio of Up to Down"))
+  count <- arrange(count, desc(count[["Ratio of Up to Down"]]))
   count$"Ratio of Up to Down Rank" <- 1:nrow(count)
   count <- arrange(count, desc(Mean))
   count$"Mean Rank" <- 1:nrow(count)
@@ -69,7 +69,7 @@ enrich <- function(tfs, direc, threshold) {
     count[[paste(i,"Rank")]] <- 1:nrow(count)
   }
   write.table(count, file=paste(outDir, direc, "count", threshold,".csv",sep=""), sep=",", col.names=NA)
-  write.table(scores, file=paste(outDir, direc, "enrich", threshold,".csv", sep=""), sep=",", col.names=NA)
+  write.table(scores, file=paste(outDir, direc, "matrix", threshold,".csv", sep=""), sep=",", col.names=NA)
   
   paletteLength <- 1000
   myBreaks <- c(seq(min(scores), 0, length.out=ceiling(paletteLength/2) + 1), 
@@ -77,16 +77,16 @@ enrich <- function(tfs, direc, threshold) {
   sort_hclust <- function(...) as.hclust(dendsort(as.dendrogram(...)))
   clustcols <- sort_hclust(hclust.vector(t(scores), method="ward"))
   clustrows <- sort_hclust(hclust.vector(scores, method="ward"))
-  png(paste(outDir,direc,"enrich",threshold,".png", sep=""), width=5, height=5, units="in", res=1000, pointsize=12)
+  png(paste(outDir,direc,"heatmap",threshold,".png", sep=""), width=5, height=5, units="in", res=1000, pointsize=12)
   pheatmap(
     mat               = scores,
     cluster_cols      = clustcols,
     cluster_rows      = clustrows,
-    fontsize          = 20,
+    fontsize          = 8,
     treeheight_row    = 0, 
     treeheight_col    = 0,
     show_colnames     = F,
-    fontsize_row      = 7,
+    fontsize_row      = 5,
     main              = paste("Enrichment for Putative Targets of ", direc, "regulated TFs", sep=""),
     color             = colorRampPalette(brewer.pal(11,"Spectral"))(paletteLength),
     breaks            = myBreaks)

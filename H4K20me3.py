@@ -17,8 +17,8 @@ out_dir = os.path.expandvars('$SCRATCH/hmchip/h4k20me3')
 gtf = os.path.expandvars('$SCRATCH/gencode.v35.annotation.gtf')
 deTFtarget_dir = os.path.expandvars('$SCRATCH/output/detargets')
 deData = os.path.expandvars('$SCRATCH/data/deseq_SSvsP_gencodev29_allgenes_021120.txt')
-peakdistance = 0
-cores = 8
+peakdistance = 1000
+cores = 4
 
 # Get the IDs of all relevant bed files
 os.makedirs(out_dir, exist_ok=True)
@@ -58,8 +58,8 @@ with open('query.json', 'w') as f:
         'feature':'gene',
         'feature.anchor':'start',
         'distance':3000,
-        'filter.attribute':'gene_type',
-        'attribute.value':'protein_coding'
+        'filter_attribute':'gene_type',
+        'attribute_value':'protein_coding'
     })
     data['show_attributes'] = 'gene_name'
     data['gtf'] = gtf
@@ -79,21 +79,21 @@ def overlap(file):
     merged = targets.merge(peaks, on = 'gene_name')
     merged.rename(columns = {'#Chromsome':'Chromosome'}, inplace = True)
     merged = merged.loc[:, ['Chromosome', 'TSS', 'TTS', 'Score', 'Strand', 'gene_name',
-        'log2FoldChange', 'padj', 'gene_type', 'peak_chr', 'peak_start', 'peak_end',
+        'log2FoldChange', 'padj', 'peak_chr', 'peak_start', 'peak_end',
         'distance', 'relative_location', 'feat_ovl_peak', 'peak_ovl_feat']]
     merged['deTF'] = [str.split(file, ".")[0]] * len(merged.index)
     return merged
 with concurrent.futures.ProcessPoolExecutor(cores) as executor:
     deTFtargets = os.listdir(deTFtarget_dir)
     merged = list(tqdm(executor.map(overlap, deTFtargets), total = len(deTFtargets)))
-    print(merged)
     merged = pd.concat(merged, join='inner').sort_values(['deTF', 'peak_chr', 'peak_start', 'peak_end'])
     merged.to_csv(f'mergedtargets{peakdistance}.txt', sep = '\t', index = False)
 
 # Merge H4K20me3-annotated genes with quiescence DE data to find patterns
 de = pd.read_csv(deData, sep = '\t')
+de = de.loc[de.padj <= 0.05]
 merged = de.merge(peaks, on = 'gene_name')
 merged.rename(columns = {'#Chromsome':'Chromosome'}, inplace = True)
 merged = merged.loc[:, ['peak_chr', 'peak_start', 'peak_end', 'feat_start', 'feat_end', 'feat_strand',
-    'distance', 'relative_loaction', 'feat_ovl_peak', 'peak_ovl_feat', 'gene_name', 'log2FoldChange', 'padj']]
+    'distance', 'relative_location', 'feat_ovl_peak', 'peak_ovl_feat', 'gene_name', 'log2FoldChange', 'padj']]
 merged.to_csv(f'allDE{peakdistance}.txt', sep = '\t', index = False)
