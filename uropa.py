@@ -1,3 +1,5 @@
+import multiprocessing as mp
+mp.set_start_method("spawn")
 import pandas as pd
 import os
 import subprocess
@@ -19,6 +21,8 @@ de = pd.read_csv(deFile, sep = "\t", header = None)
 de = de.loc[de[2] < 0.05]
 de.rename(columns = {0:"gene_name"}, inplace = True)
 de.drop_duplicates(subset = "gene_name", inplace = True)
+up = de.loc[de[1] > 0]
+down = de.loc[de[1] < 0]
 
 # Use UROPA and Gencode v35 to annotate peaks with nearest protein coding gene
 def anno(bed):
@@ -40,7 +44,7 @@ def anno(bed):
         data['bed'] = bed
         data['threads'] = 1
         json.dump(data, f)
-    command = shlex.split(f"uropa -i query.json -s -o {out}")
+    command = shlex.split(f"uropa -i query.json -o {out}")
     subprocess.run(command)
 
 """ with concurrent.futures.ProcessPoolExecutor(36) as executor:
@@ -76,27 +80,41 @@ def intersect(a):
     beds = glob.glob(normDir + "*/*.bed")
     list(tqdm(executor.map(intersect, beds), total = len(beds))) """
 
+def num(x):
+    try:
+        return int(x.split("/")[-1].split(".bed")[0].split("_")[0])
+    except:
+        return x
+
 factors = os.listdir(intDir)
 sortedBeds = []
 for factor in factors:
     beds = glob.glob(os.path.join(intDir, factor, "*.bed"))
-    beds.sort(key = lambda x: int(x.split("/")[-1].split(".bed")[0].split("_")[0]))
+    beds.sort(key = num)
     sortedBeds.append(beds)
 
-cobindMat = pd.DataFrame()
+cobindUp = pd.DataFrame()
+cobindDown = pd.DataFrame()
 deGenes = []
+
 for i in range(len(sortedBeds)):
     factor = sortedBeds[i][0].split("/")[-2]
     temp = pd.read_csv(sortedBeds[i][0], sep = "\t")
     temp.drop_duplicates(subset = "gene_name", inplace = True, keep = "first", ignore_index = True)
-    cobindMat[factor] = temp["peak_score"]
+    if factor in up["gene_name"].to_list():
+        cobindUp[factor] = temp["peak_score"]
+    else:
+        cobindDown[factor] = temp["peak_score"]
     deGenes = temp["gene_name"].to_list()
-cobindMat.index = deGenes
+cobindUp.index = deGenes
+cobindDown.index = deGenes
 os.makedirs(cobindDir, exist_ok = True)
-cobindMat.to_csv(os.path.join(cobindDir, "train.csv"), sep = "\t")
-print(cobindMat)
+cobindUp.to_csv(os.path.join(cobindDir, "up_train.csv"), sep = "\t")
+cobindDown.to_csv(os.path.join(cobindDir, "down_train.csv"), sep = "\t")
 
-cobindMat = pd.DataFrame()
+
+cobindUp = pd.DataFrame()
+cobindDown = pd.DataFrame()
 deGenes = []
 for i in range(len(sortedBeds)):
     factor = sortedBeds[i][0].split("/")[-2]
@@ -104,9 +122,12 @@ for i in range(len(sortedBeds)):
     if len(sortedBeds[i]) > 1:
         temp = pd.read_csv(sortedBeds[i][1], sep = "\t")
     temp.drop_duplicates(subset = "gene_name", inplace = True, keep = "first", ignore_index = True)
-    cobindMat[factor] = temp["peak_score"]
+    if factor in up["gene_name"].to_list():
+        cobindUp[factor] = temp["peak_score"]
+    else:
+        cobindDown[factor] = temp["peak_score"]
     deGenes = temp["gene_name"].to_list()
-cobindMat.index = deGenes
-os.makedirs(cobindDir, exist_ok = True)
-cobindMat.to_csv(os.path.join(cobindDir, "test.csv"), sep = "\t")
-print(cobindMat)
+cobindUp.index = deGenes
+cobindDown.index = deGenes
+cobindUp.to_csv(os.path.join(cobindDir, "up_test.csv"), sep = "\t")
+cobindDown.to_csv(os.path.join(cobindDir, "down_test.csv"), sep = "\t")
