@@ -44,10 +44,3 @@ Remove duplicate annotations (e.g. CTCF-bound above) and separate DA regions int
 ## [Fetch Reference Sequences](getSeq.r)
 
 Uses `BSgenome.Hsapiens.UCSC.hg38` from Bioconductor to fetch list of reference sequences for each DA region.
-
-
-## **To-Do**
-
-1. Motif analysis on DA regions.
-1. TF footprinting, peak-to-gene linking, RNA-seq correlation (See [30361341](https://pubmed.ncbi.nlm.nih.gov/30361341/))
-1. Identify pioneer transcription factors (See [31839570](https://pubmed.ncbi.nlm.nih.gov/31839570/))

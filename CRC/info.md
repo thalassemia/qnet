@@ -38,7 +38,3 @@ Uses H3K27ac aligned reads, MACS2 peaks, and a ROSE enhancer table as inputs to 
 
 1. Downloaded "comprehensive" GENCODE V29 annotation file from [UCSC Table Browser](https://genome.ucsc.edu/cgi-bin/hgTables) to keep analysis consistent. Required a few tweaks to the code and the replacement of the pre-bundled refseq-to-HGNC table with an [Ensembl-to-HGNC](#convert-ensembl-to-hgnc-ids) table.
 1. Implemented multiprocessing to dramatically speed up the mapping of aligned reads to enhancer regions.
-
-## **To-Do**
-1. Quantify transcript expression using in-house ATAC-seq or RNA-seq data.
-1. Prepare to analyze in-house CUT&Tag data for histone modifications.
