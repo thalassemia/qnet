@@ -1,31 +1,55 @@
-# TFs and Quiescence
-_**All code was designed to be run on the Hoffman2 cluster with 8 cores for Python scripts (~2GB RAM/core) and one core for R scripts (~4GB RAM) unless otherwise specified.**_
+# **Genomic Exploration of Quiescence**
+_**Using a mix of in-house and public datasets, we aim to extrapolate meaningful information about the regulatory circuitry underlying the maintenance of cellular quiescence.**_
 
-## Table of Contents
-**TF Interaction Pipeline**
-1. [Overview](Poster.pdf)
-1. [Filter ChIP-Seq Data](getBeds/info.md)
-1. [Preprocess Data](preprocess/info.md)
-1. [Create Co-Binding Heatmaps](cobindHeatmaps/info.md)
-1. [Train/Interpret ML Model](ml/info.md)
-1. [Create Interaction Heatmaps](interactHeatmaps/info.md)
-1. [Analyze Results](analyze/info.md)
+## **Table of Contents**
+---
 
-**Side Projects**
+**TF Co-association Pipeline**
+1. [Overview](tfchip/Poster.pdf)
+1. [Filter ChIP-Seq Data](tfchip/info.md#filter-chip-seq-data)
+1. [Preprocess Data](tfchip/info.md#preprocess-data)
+1. [Train/Interpret ML Models](tfchip/info.md#train/interpret-ml-models)
+1. [Analyze Results](tfchip/analyze/info.md)
+
+---
+
+**ATAC-seq Annotation**
+1. [Annotate Differentially Accessible (DA) Regions](atac/info.md#annotate-da-regions)
+1. [Annotate DA Regions with Candidate Cis-Regulatory Elements (cCRE)](atac/info.md#Compare-with-cCRE-databases)
+1. [Create Bar Charts for Annotation Frequencies](atac/info.md#create-bar-charts-for-annotations)
+1. [Fetch DNA Sequences for DA Regions](atac/info.md#fetch-reference-sequences)
+
+---
+
+**Histone Modifications**
+1. [Filter ChIP-seq Data](hmchip/info.md#filter-chip-seq-data)
+1. [Preprocess Data](hmchip/info.md#preprocess-data)
+1. [Create Co-binding Map](hmchip/info.md#create-co-binding-map)
+
+---
+
+**Core Regulatory Circuits (CRCs)**
+1. [Convert Ensembl to HGNC IDs](CRC/info.md#convert-ensembl-to-hgnc-ids)
+1. [Find Putative Super Enhancers](CRC/info.md#find-putative-super-enhancers)
+1. [Create CRCs using CRCmapper](CRC/info.md#create-crcs-using-crcmapper)
+
+---
+
+**Miscellaneous**
 1. [Determine DE TF Targets](beta/info.md)
 1. [GREAT GO of ChIP-Seq Peak Files](#great-go-of-chip-seq-peak-files)
 1. [H4K20me3 Patterns](#h4k20me3-patterns)
-1. [Activity Log](#Activity%20Log)
+1. [Comparing DE Between Quiescent Conditions](#comparing-DE-between-quiescent-conditions)
+1. [Read Alignment](#read-alignment)
+1. [Box Folder Organization](box.md)
 
 ## [GREAT GO of ChIP-Seq Peak Files](greatBatch.R)
-**Dependencies:** R 4.0+, rGREAT, GenomicRanges
 
 Runs each DE TF bed file through GREAT with peaks called on unassigned scaffolds removed (chromosome names GL* or KI* as described [here](https://github.com/dpryan79/ChromosomeMappings/blob/master/GRCh38_ensembl2UCSC.txt)). Outputs separate tables of enrichment information for Biological Processes, Cellular Component, and Molecular Function. Also creates a file with several key summary graphics.
 
 ## [H4K20me3 Patterns](H4K20me3.py)
-**Dependencies:** Python 3.8+, bedtools, tqdm, and pandas
 
-Isolates all bed files in [Cistrome database](http://cistrome.org/db/#/) corresponding to H4K20me3-targeting experiments and merges all peaks within a specified distance to create a single file of with, hopefully, all unique binding sites. The columns for the resulting file are chromosome, start, end, and number of peaks merged to create that final listing.
+Isolates all bed files in [Cistrome database](http://cistrome.org/db/#/) corresponding to H4K20me3-targeting experiments and merges all peaks within a specified distance to create a single file of with, hopefully, all unique H4K27me3 deposition sites. The columns for the resulting file are chromosome, start, end, and number of peaks merged to create each final entry.
 
 Then, uses [UROPA](https://www.nature.com/articles/s41598-017-02464-y#Sec2) to annotate each peak with the nearest protein coding gene. The tool also produces some nice summary graphs in a pdf file. The UROPA `json` file is configured as below:
 
@@ -48,6 +72,16 @@ Then, uses [UROPA](https://www.nature.com/articles/s41598-017-02464-y#Sec2) to a
 Additionally, this script reads the [deTargets.R](#detargetsR) output file for each DE TF and performs an inner join between those and the UROPA-annotated peak file (specifically, the one with `finalhits` in its name). It tacks on an extra column for each of these inner-joined dataframes denoting the DE TF whose targets it has used to perform this inner join. This makes it possible to distinguish which targets H4K20me3 shares with each DE TF when all of these dataframes are subsequently concatenated and written into one very long text file with the word `merged` in its name. To ease viewing and future data manipulation, the rows in this giant output file are first sorted alphabetically by DE TF name (so all targets for each DE TF are grouped together), then by location (from the first base pair of chromosome 1 to the last base pair of chromosome Y).
 
 Lastly, the UROPA-annotated peak file is merged with the original quiescence DE data, adding log2 fold changes and DESeq2 p-adjusted values to any genes that exhibit significant (p-adj < 0.05) differential expression.
+
+## [Read Alignment](readmap.sh)
+
+**Note**: Requires gatk, samtools, and bowtie2 (will replace with BWA)
+
+Script to automate filtering and alignment of raw Illumina sequencing reads. Uses GRCh38.p12 (same patch version as GENCODE V29) bowtie index from [NCBI FTP](https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.27_GRCh38.p12/GRCh38_major_release_seqs_for_alignment_pipelines/).
+
+## [Comparing DE Between Quiescent Conditions](newCond.py)
+
+
 
 ## Activity Log
 1. Using [mergeDEandTF.R](getBeds/mergeDEandTF.R), I merged the provided differential expression data (serum starved vs proliferating cells) with a [curated list of human TFs](http://humantfs.ccbr.utoronto.ca/download.php) to create the file `SSvsP_SigTFs_080720.csv`. Only the TFs that exhibited significant differences in expression (DE TFs) were included in the final file.

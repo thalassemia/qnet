@@ -12,18 +12,12 @@
 Runs BETA minus (hg38) on input bed files to generate lists of potential targets ranked by regulatory potential as it is defined in [PMC4135175](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4135175/).
 
 ## [sigTargets.py](sigTargets.py)
-**Dependencies:** Python 3.8+ and pandas
-
 For each transcription factor, this consolidates all [BETA target predictions](#betaBatchpy) into a single tab-delimited csv file keeping the highest scoring instance of each duplicate target.
 
 ## [deTargets.R](deTargets.R)
-**Dependencies:** R 4.0+ and tidyverse
-
 Inner joins each [combined targets file](#sigTargetspy) with differential expression data generated using DESeq2.
 
 ## [targetEnrichment.R](targetEnrichment.R)
-**Dependencies:** R 4.0+, tidyverse, fastcluster, pheatmap, RColorBrewer
-
 _**Note:** Use 7 cores (~4GB RAM/core)_
 
 TFs are split into two groups, one for those that are upregulated with quiescence and another for those that are downregulated. For each group, a list of unique putative targets (meaning those that show up in the BETA output of at least one TF in the group) is compiled at score thresholds of 0, 0.5, 1.0, 1.5, 2.0, 2.5, and 3.0. 
