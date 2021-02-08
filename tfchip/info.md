@@ -17,7 +17,6 @@
 1. [LightGBM and SHAP](#lightgbm-and-shap)
 1. [Interaction Heatmaps](#interaction-heatmaps)
 
----
 
 ## **Filter ChIP-seq Data**
 ### [**Get DE TF List**](getBeds/mergeDEandTF.R)
@@ -44,7 +43,6 @@ The passing files are then sorted (first by descending `FRiP` then by descending
 
 Provides list of DE TFs for which neither Cistrome nor ENCODE had ChIP-seq data. Appends information about copied Cistrome files to metadata for ENCODE files.
 
----
 
 ## **Preprocess Data**
 
@@ -95,7 +93,6 @@ For each heatmap, the titular TF is the so-called "focus factor" for that graphi
 
 By default, heatmaps are created for each TF in the top 20 by log2 fold change DE for which there is data. The rows of the heatmaps are all DE TF's that change in the same direction as the focus factor (either all enriched or all depleted with quiescence).
 
----
 
 ## **Train/Interpret ML Models**
 

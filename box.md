@@ -21,10 +21,9 @@
         - [CRC](#crc)
 - [RSGDREAM 2020](#rsgdream-2020)
 - [Paper Notes](#paper-notes)
-- [Meeting Notes](#meeting-notes)
+- [Progress Reports](#progress-reports)
 - [To-Do](#to-do)
 
----
 
 ## **ATAC-seq**
 ### **Annotations**
@@ -36,7 +35,6 @@ Contains scatter plots and inner joins representing a naive attempt to find some
 ### **ATAC-seq Data**
 Contains DiffBind and raw ATAC-seq output for SS vs P.
 
----
 
 ## **RNA-seq**
 ### **Predicted Regulators**
@@ -46,7 +44,6 @@ Contains all output of [Comparing DE Between Quiescent Conditions](README.md#com
 ### **RNA-seq Data**
 Contains DEseq2 output for SS vs P, CI vs P, SS vs SSR, and CI vs CIR.
 
----
 
 ## **ChIP-seq**
 ### **Transcription Factor**
@@ -67,22 +64,16 @@ Also contains overlap between merged H4K20me3 annotated genes and merged SS vs P
 #### **CRC**  
 Contains the [aligned reads](README.md#read-alignment), [ROSE output](CRC/info.md#find-putative-super-enhancers), and [CRCmapper output](CRC/info.md#create-crcs-using-crcmapper) for H3K27ac ChIP-seq data from a [cell cycle study](https://pubmed.ncbi.nlm.nih.gov/28289232/) and an [ENCODE experiment](https://www.encodeproject.org/experiments/ENCSR000APN/) on a line of adult human dermal fibroblasts. The raw sequencing reads for G0/G1, M, and S phase H3K27ac ChIP-seq were downloaded using [SRA Explorer](https://sra-explorer.info/) and the search term SRP098814. Peaks were subsequently called using MACS3. By contrast, prealigned reads (bowtie2, hg38) from isogenic replicate 2 (ENCFF754VWN) were downloaded for the ENCODE cell line. Similarly, pre-called replicated peaks (ENCFF398SWW) were downloaded for this experiment.
 
----
 
 ## **RSGDREAM 2020**
 Contains the abstract, poster, and recorded five-minute talk submitted to the virtual 2020 ISCB Regulatory and Systems Genomics with DREAM Challenges Conference.
 
----
 
 ## **Paper Notes**
 Contains notes on relevant papers for future reference.
 
----
-
-## **Meeting Notes**
-Contains notes on things discussed in weekly progress report meetings.
-
----
+## **Progress Reports**
+Contains lab meeting presentations and other progress reports.
 
 ## **To-Do**
 Contains the most up-to-date lists of future plans and extensions.
