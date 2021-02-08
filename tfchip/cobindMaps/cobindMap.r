@@ -3,6 +3,8 @@ library(doParallel)
 # get list of all cobinding matrices
 cobindDir = "/u/scratch/s/seanchea/cobinding/cobind/"
 maps <- list.files(cobindDir)
+maps <- maps[!(maps %in% c('noBinding.csv'))]
+setwd(cobindDir)
 
 # 36 threads is very overkill
 cl <- makeCluster(36, type = "PSOCK")

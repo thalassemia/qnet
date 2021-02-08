@@ -4,9 +4,9 @@ import os
 from subprocess import call
 import numpy as np
 
-atacCsv = os.path.expandvars('$SCRATCH/atac/corr/atacAnno.csv')
+#atacCsv = os.path.expandvars('$SCRATCH/atac/corr/atacAnno.csv')
 atac = os.path.expandvars('$SCRATCH/atac/atacAnno.bed')
-pd.read_csv(atacCsv).to_csv(atac, header = None, index = False, sep = '\t')
+#pd.read_csv(atacCsv).to_csv(atac, header = None, index = False, sep = '\t')
 
 merged_dir = os.path.expandvars('$SCRATCH/atac/')
 

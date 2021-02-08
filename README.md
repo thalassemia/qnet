@@ -2,7 +2,6 @@
 _**Using a mix of in-house and public datasets, we aim to extrapolate meaningful information about the regulatory circuitry underlying the maintenance of cellular quiescence.**_
 
 ## **Table of Contents**
----
 
 **TF Co-association Pipeline**
 1. [Overview](tfchip/Poster.pdf)
@@ -64,9 +63,9 @@ Then, uses [UROPA](https://www.nature.com/articles/s41598-017-02464-y#Sec2) to a
             }
         ],
         "show_attributes": "gene_name",
-        "gtf": "Path to gencode.v35.annotation.gtf",
+        "gtf": "Path to gencode.v29.gtf",
         "bed": "Path to merged peak file",
-        "threads": 8
+        "threads": 36
     }
 
 Additionally, this script reads the [deTargets.R](#detargetsR) output file for each DE TF and performs an inner join between those and the UROPA-annotated peak file (specifically, the one with `finalhits` in its name). It tacks on an extra column for each of these inner-joined dataframes denoting the DE TF whose targets it has used to perform this inner join. This makes it possible to distinguish which targets H4K20me3 shares with each DE TF when all of these dataframes are subsequently concatenated and written into one very long text file with the word `merged` in its name. To ease viewing and future data manipulation, the rows in this giant output file are first sorted alphabetically by DE TF name (so all targets for each DE TF are grouped together), then by location (from the first base pair of chromosome 1 to the last base pair of chromosome Y).
@@ -80,8 +79,21 @@ Lastly, the UROPA-annotated peak file is merged with the original quiescence DE 
 Script to automate filtering and alignment of raw Illumina sequencing reads. Uses GRCh38.p12 (same patch version as GENCODE V29) bowtie index from [NCBI FTP](https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.27_GRCh38.p12/GRCh38_major_release_seqs_for_alignment_pipelines/).
 
 ## [Comparing DE Between Quiescent Conditions](newCond.py)
+Filters all DE gene lists (DEseq2) for p-adjusted <= 0.05 and abs(log2FoldChange) >= 1. Creates secondary lists for each primary list that only contain DE TFs. Performs SQL-style outer joins between each possible pairing of DE lists (does NOT mix-and-match between gene and TF lists). Also includes two matrices of counts (one for all DE genes and another for DE TFs) with the following format:
 
+<center>
 
+&nbsp;       | SS vs P | CI vs P | SS vs SSR | CI vs CIR
+-------------|---------|---------|-----------|----------
+**SS vs P**  |Total    |Same Dir.|Same Dir.  |Same Dir.
+**CI vs P**  |Diff Dir.|Total    |Same Dir.  |Same Dir.
+**SS vs SSR**|Diff Dir.|Diff Dir.|Total      |Same Dir.
+**CI vs CIR**|Diff Dir.|Diff Dir.|Diff Dir.  |Total
+
+</center>
+
+&nbsp;  
+**SS** = serum starved, **CI** = contact inhibited, **P** = proliferating, **SSR** = serum starved restimulated, **CIR** = contact inhibited restimulated, **Total** = count for that DE list, **Same Dir.** = count of overlapping entries with the same fold change sign in both commpared lists, **Diff Dir.** = count of overlapping entries with different fold change signs in both compared lists
 
 ## Activity Log
 1. Using [mergeDEandTF.R](getBeds/mergeDEandTF.R), I merged the provided differential expression data (serum starved vs proliferating cells) with a [curated list of human TFs](http://humantfs.ccbr.utoronto.ca/download.php) to create the file `SSvsP_SigTFs_080720.csv`. Only the TFs that exhibited significant differences in expression (DE TFs) were included in the final file.
