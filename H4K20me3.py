@@ -14,11 +14,11 @@ import json
 index_dir = os.path.expandvars('$SCRATCH/hmchip')
 bed_dir = os.path.expandvars('$SCRATCH/hmchip/human_hm')
 out_dir = os.path.expandvars('$SCRATCH/hmchip/h4k20me3')
-gtf = os.path.expandvars('$SCRATCH/gencode.v35.annotation.gtf')
-deTFtarget_dir = os.path.expandvars('$SCRATCH/output/detargets')
+gtf = os.path.expandvars('$SCRATCH/data/gencode.v29.gtf')
+deTFtarget_dir = os.path.expandvars('$SCRATCH/outputNoSALL2/detargets')
 deData = os.path.expandvars('$SCRATCH/data/deseq_SSvsP_gencodev29_allgenes_021120.txt')
-peakdistance = 1000
-cores = 4
+peakdistance = 0
+cores = 36
 
 # Get the IDs of all relevant bed files
 os.makedirs(out_dir, exist_ok=True)
@@ -27,17 +27,16 @@ index = index.loc[index['Factor'] == 'H4K20me3']
 index = index[index.columns.difference(['Species', 'GSMID', 'Factor'], sort=False)]
 
 def get_file(id):
-    file = glob.glob(os.path.join(bed_dir, str(id)) + '*')
-    copy(os.path.join(bed_dir, ''.join(file)), out_dir)
-    return file
+    fileName = glob.glob(os.path.join(bed_dir, str(id)) + '_*')[0]
+    copy(os.path.join(bed_dir, fileName), os.path.join(out_dir, 'beds'))
+    return fileName
 
-def read_file(file):
-    return pd.read_csv(file, sep = '\t', header = None)
+def read_file(fileName):
+    return pd.read_csv(fileName, sep = '\t', header = None)
 
 with concurrent.futures.ProcessPoolExecutor(cores) as executor:
     # Isolate relevant bed files
     files = list(tqdm(executor.map(get_file, index.loc[:,'DCid'].to_numpy()), total=len(index.index)))
-    files = list(itertools.chain.from_iterable(files))
     # Read from and concatenate all relevant bed files
     contents = list(tqdm(executor.map(read_file, files), total = len(files)))
     files = pd.concat(contents).sort_values([0,1,2])
@@ -49,7 +48,7 @@ with concurrent.futures.ProcessPoolExecutor(cores) as executor:
     df = pd.read_csv(io.BytesIO(output), sep="\t", header = None)
     df.to_csv(os.path.join(out_dir, f'uniquepeaks{peakdistance}.csv'), sep='\t', header = False, index = False)
 
-# Use UROPA and Gencode v35 to annotate peaks with nearest protein coding gene
+# Use UROPA and GENCODE V29 to annotate peaks with nearest protein coding gene
 os.chdir(out_dir)
 with open('query.json', 'w') as f:
     data = {}
