@@ -16,11 +16,13 @@ intDir = os.path.expandvars("$SCRATCH/hmchip/intersect/")
 cobindDir = os.path.expandvars("$SCRATCH/hmchip/cobind/")
 bedDir = os.path.expandvars("$SCRATCH/hmchip/cleanbeds/")
 cleanPath = os.path.expandvars("$SCRATCH/atac/corr/atacAnno_clean.tsv")
-deFile = os.path.expandvars("$SCRATCH/data/bsf.csv")
-de = pd.read_csv(deFile, sep = "\t", header = None)
-de = de.loc[de[2] < 0.05]
-de.rename(columns = {0:"gene_name"}, inplace = True)
-de.drop_duplicates(subset = "gene_name", inplace = True)
+deFile = os.path.expandvars("$SCRATCH/data/deseq_SSvsP_gencodev29_allgenes_021120.txt")
+de = pd.read_csv(deFile, sep = "\t")
+de.drop_duplicates(subset = "gene_id", inplace = True)
+de = de.loc[de["padj"] <= 0.05,]
+de.rename(columns = {"gene_id": "Ensembl ID"}, inplace = True)
+de["Ensembl ID"] = [i.split('.')[0] for i in de["Ensembl ID"]]
+de["Ensembl ID"] = de["Ensembl ID"].str.strip()
 
 def norm(a):
     temp = pd.read_csv(a)
@@ -42,18 +44,21 @@ with concurrent.futures.ProcessPoolExecutor(36) as executor:
 
 def intersect(a):
     # Merge with DE gene list
-    """ bed = pd.read_csv(a, sep = "\t")
-    bed.rename(columns = {"SYMBOL": "gene_name"}, inplace = True)
-    merged = de.merge(bed, on = "gene_name", how = "left")
-    merged = merged.loc[:, ["gene_name", "peak_score"]]
+    bed = pd.read_csv(a, sep = "\t")
+    bed.rename(columns = {"geneId": "Ensembl ID"}, inplace = True)
+    bed["Ensembl ID"] = [i.split('.')[0] for i in bed["Ensembl ID"]]
+    bed["Ensembl ID"] = bed["Ensembl ID"].str.strip()
+    bed = bed.loc[[i.find("Promoter")!=-1 for i in bed["annotation"]],]
+    merged = de.merge(bed, on = "Ensembl ID", how = "left")
+    merged = merged.loc[:, ["gene_name", "peak_score", "Ensembl ID"]]
     merged.fillna(0, inplace = True)
     bedname = a.split("/")[-1]
     factor = a.split("/")[-2]
     os.makedirs(os.path.join(intDir, factor), exist_ok = True)
-    merged.to_csv(os.path.join(intDir, factor, bedname), sep = "\t", index = False) """
+    merged.to_csv(os.path.join(intDir, factor, bedname), sep = "\t", index = False)
 
     # Merge with ATAC gene list
-    bedname = a.split("/")[-1]
+    """ bedname = a.split("/")[-1]
     factor = a.split("/")[-2]
     bed = pd.read_csv(a, sep = "\t")
     bed = bed.loc[:, ["seqnames", "start", "end", "peak_score"]]
@@ -70,7 +75,7 @@ def intersect(a):
     df.drop_duplicates(subset = [0,1,2], inplace = True)
     df.sort_index(inplace = True)
     os.makedirs(os.path.join(intDir, factor), exist_ok = True)
-    df.to_csv(os.path.join(intDir, factor, bedname), sep = "\t", index = False, header = False)
+    df.to_csv(os.path.join(intDir, factor, bedname), sep = "\t", index = False, header = False) """
 
 with concurrent.futures.ProcessPoolExecutor(36) as executor:
     beds = glob.glob(normDir + "*/*.csv")
@@ -83,7 +88,7 @@ def num(x):
         return x
 
 # For DE
-""" factors = os.listdir(intDir)
+factors = os.listdir(intDir)
 sortedBeds = []
 for factor in factors:
     beds = glob.glob(os.path.join(intDir, factor, "*.csv"))
@@ -101,10 +106,10 @@ for i in range(len(sortedBeds)):
     cobind[factor] = temp["peak_score"]
 cobind.index = deGenes
 os.makedirs(cobindDir, exist_ok = True)
-cobind.to_csv(os.path.join(cobindDir, "DE.csv"), sep = "\t") """
+cobind.to_csv(os.path.join(cobindDir, "DE.csv"), sep = "\t")
 
 # For ATAC
-factors = os.listdir(intDir)
+""" factors = os.listdir(intDir)
 sortedBeds = []
 for factor in factors:
     beds = glob.glob(os.path.join(intDir, factor, "*.csv"))
@@ -117,4 +122,4 @@ for i in range(len(sortedBeds)):
     temp = pd.read_csv(sortedBeds[i][0], sep = "\t")
     cobind[factor] = temp.iloc[:, -1].to_list()
 os.makedirs(cobindDir, exist_ok = True)
-cobind.to_csv(os.path.join(cobindDir, "atac.csv"), sep = "\t")
+cobind.to_csv(os.path.join(cobindDir, "atac.csv"), sep = "\t") """
