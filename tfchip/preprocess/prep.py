@@ -11,7 +11,7 @@ import numpy as np
 
 anno_dir = os.path.expandvars("$SCRATCH/cobinding/annotated/")
 normDir = os.path.expandvars("$SCRATCH/cobinding/normalized/")
-intDir = os.path.expandvars("$SCRATCH/cobinding/intersectTest/")
+intDir = os.path.expandvars("$SCRATCH/cobinding/intersect/")
 cobindDir = os.path.expandvars("$SCRATCH/cobinding/cobind/")
 deFile = os.path.expandvars("$SCRATCH/data/deseq_SSvsP_gencodev29_allgenes_021120.txt")
 de = pd.read_csv(deFile, sep = "\t")
@@ -45,16 +45,16 @@ def norm(a):
 
 def intersect(a):
     bed = pd.read_csv(a, sep = "\t")
-    bed.rename(columns = {"SYMBOL": "gene_name", "geneId": "Ensembl ID"}, inplace = True)
+    bed.rename(columns = {"geneId": "Ensembl ID"}, inplace = True)
+    bed['Ensembl ID'] = [i.split('.')[0] for i in bed['Ensembl ID']]
     # find peaks annotated to promoters of DE genes
     bed = bed.loc[[i.find("Promoter")!=-1 for i in bed["annotation"]],]
-    print(bed.columns)
     merged = de.merge(bed, on = "Ensembl ID", how = "left")
     merged = merged.loc[:, ["gene_name", "peak_score", "Ensembl ID"]]
     # only keep the highest scoring peak for each Ensembl ID
-    merged.sort_values(by = ["Ensembl ID", "peak_score"], ascending = False, inplace = True)
-    print(merged.value_counts(subset = "Ensembl ID").loc(merged.value_counts(subset = "Ensembl ID") > 1))
+    merged.sort_values(by = "peak_score", ascending = False, inplace = True)
     merged.drop_duplicates(subset = "Ensembl ID", inplace = True)
+    merged.sort_values(by = "Ensembl ID", inplace = True)
     # all non-matched DE promoters get auto-assigned a score of 0
     merged.fillna(0, inplace = True)
     bedname = a.split("/")[-1]
@@ -152,10 +152,8 @@ for i in sortedBeds:
     # use second highest ranked file if available to create "test" set
     if len(i) > 1:
         temp = pd.read_csv(i[1], sep = "\t")
-    # keep last (highest scoring) instance of peak anotated to a given gene
-    temp.drop_duplicates(subset = "gene_name", inplace = True, keep = "last", ignore_index = True)
-    temp.sort_values(by = "gene_name", inplace = True)
-    up_genes = [(i in up["gene_name"].to_list()) for i in temp["gene_name"]]
+    temp.sort_values(by = "Ensembl ID", inplace = True)
+    up_genes = temp["Ensembl ID"].isin(up["Ensembl ID"])
     if factor in up["gene_name"].to_list():
         cobindUU[factor] = temp.loc[up_genes, "peak_score"]
         cobindUD[factor] = temp.loc[[not i for i in up_genes], "peak_score"]
@@ -195,4 +193,4 @@ cobindAll.to_csv(os.path.join(cobindDir, "all_test.csv"), sep = "\t")
 # output a list of DE gene promoters that had no annotated TF binding
 noBind = cobindAll[(cobindAll==0).all(axis = 1)]
 with open(os.path.join(cobindDir, "noBinding.csv"), "w") as out:
-    out.write(noBind.index)
+    out.writelines([i + '\n' for i in noBind.index])
