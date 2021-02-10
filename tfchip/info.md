@@ -109,7 +109,7 @@ Calculates train and test set accuracies for each model (saved in Hoffman2 job o
 
 Saves the resulting LightGBM model, the training set, the test set, the SHAP interaction values, the SHAP values, the list of features, and the SHAP explainer object in a python shelf for future access.
 
-### [**Interaction Heatmaps**](interactMap.py)
+### [**Interaction Heatmaps**](interactMaps/interactMatrix.py)
 
 Creates two heatmaps of SHAP interaction values. To create the heatmap of averages, the SHAP interaction values for each TF pair are first averaged across all positive samples for a given model, then these averages were averaged again over all models. To create the heatmap of maximums, the SHAP interaction values at each positive sample are averaged across all models and the maximum (across all samples) is taken for each TF pair.
 
