@@ -2,7 +2,7 @@ library(doParallel)
 
 # get list of all cobinding matrices
 cobindDir = "/u/scratch/s/seanchea/cobinding/cobind/"
-outDir <- "/u/scratch/s/seanchea/cobinding/cobindU/"
+outDir <- "/u/scratch/s/seanchea/cobinding/cobindD/"
 maps <- list.files(cobindDir)
 maps <- maps[!(maps %in% c('noBinding.csv'))]
 setwd(cobindDir)
@@ -24,11 +24,9 @@ factors <- foreach(matrix = maps, .packages = c("data.table", "pheatmap", "dends
     pdf(paste0(outDir,name,".pdf"))
     pheatmap(
         mat               = mat,
-        #cluster_cols      = sort_hclust(hclust.vector(t(mat), method="ward")),
-        #cluster_rows      = sort_hclust(hclust.vector(mat, method="ward")),
-        # will reach recursion limit on some cobinding maps
-        cluster_cols      = hclust.vector(t(mat), method="ward"),
-        cluster_rows      = hclust.vector(mat, method="ward"),
+        # dendsort hits C stack limit on down_train.csv for some reason
+        cluster_cols      = sort_hclust(hclust.vector(t(mat), method="ward")),
+        cluster_rows      = sort_hclust(hclust.vector(mat, method="ward")),
         fontsize          = 12,
         treeheight_row    = 0, 
         treeheight_col    = 0,
