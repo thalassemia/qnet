@@ -16,8 +16,9 @@ def main(args):
     import shelve
     import re
 
-    def model(number):
-        p = pd.read_csv("/u/scratch/s/seanchea/atac/Ucobind/up_train.csv", sep = "\t", index_col = 0)
+    def model(number, exp, control):
+        print(exp)
+        p = pd.read_csv("/u/scratch/s/seanchea/cobinding/cobind/" + exp, sep = "\t", index_col = 0)
         # independently shuffle each column, theoretically eliminating any TF binding dependencies
         n = p.apply(lambda x: x.sample(frac = 1).values) # .values needed or else will return Series that realigns via index
 
@@ -30,7 +31,7 @@ def main(args):
         X.columns = features
         X.shape[0] / 2
 
-        p = pd.read_csv("/u/scratch/s/seanchea/atac/Ucobind/up_test.csv", sep = "\t", index_col = 0)
+        p = pd.read_csv("/u/scratch/s/seanchea/cobinding/cobind/" + control, sep = "\t", index_col = 0)
         n = p.apply(lambda x: x.sample(frac = 1).values)
 
         p["y"] = [1] * len(p)
@@ -67,7 +68,47 @@ def main(args):
         print(f'Done with interactions in {time.time() - start} sec')
 
         # export all relevant variables for future reference
-        saveDir=f'/u/scratch/s/seanchea/atac/up_models/{number}/python/'
+        saveDir=f'/u/scratch/s/seanchea/models/{exp}/{number}/python/test/'
+        os.makedirs(saveDir, exist_ok = True)
+        my_shelf = shelve.open(saveDir + "/saveData" ,'n', protocol = 4)
+
+        my_shelf["trees"] = locals()["trees"]
+        my_shelf["X"] = locals()["X"]
+        my_shelf["X_test"] = locals()["X_test"]
+        my_shelf["allInteractions"] = locals()["allInteractions"]
+        my_shelf["shap_values"] = locals()["shap_values"]
+        my_shelf["features"] = locals()["features"]
+        my_shelf["explainer"] = locals()["explainer"]
+
+        my_shelf.close()
+
+        print('Done saving all variables (with test set)')
+
+        # repeat procedure for model validated on itself
+        start = time.time()
+        trees = lgb.train(param, train_data, 100, valid_sets = train_data, feature_name=features, verbose_eval=1)
+        print(f'Done training in {time.time() - start} sec')
+
+        #TO-DO: implement more sophisticated evaluation measure like AUROC
+        print(f'Train set: {np.mean((trees.predict(X) > 0.5) == y)}')
+        print(f'Test set: {np.mean((trees.predict(X_test) > 0.5) == y_test)}')
+
+        start = time.time()
+        explainer = shap.TreeExplainer(trees)
+        shap_values = explainer.shap_values(X)
+        print(f'Done with SHAP values in {time.time() - start} sec')
+
+        cores = mp.cpu_count()
+        chunks = np.array_split(X, cores)
+        start = time.time()
+        # having SHAP calculate interaction values on chunks to enable multiprocessing
+        with concurrent.futures.ProcessPoolExecutor(cores) as executor:
+            a = executor.map(explainer.shap_interaction_values, chunks)
+        allInteractions = np.concatenate(list(a), axis = 0)
+        print(f'Done with interactions in {time.time() - start} sec')
+
+        # export all relevant variables for future reference
+        saveDir=f'/u/scratch/s/seanchea/models/{exp}/{number}/python/self/'
         os.makedirs(saveDir, exist_ok = True)
         my_shelf = shelve.open(saveDir + "/saveData" ,'n', protocol = 4)
 
@@ -84,7 +125,7 @@ def main(args):
         print('Done saving all variables')
 
     for i in range(100): 
-        model(i)
+        model(i, args[-2], args[-1])
 
 # this convoluted setup is necessary to enable the "spawn" flag to be set properly
 if __name__ == '__main__':
