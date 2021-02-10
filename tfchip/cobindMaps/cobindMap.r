@@ -2,6 +2,7 @@ library(doParallel)
 
 # get list of all cobinding matrices
 cobindDir = "/u/scratch/s/seanchea/cobinding/cobind/"
+outDir <- "/u/scratch/s/seanchea/cobinding/cobindU/"
 maps <- list.files(cobindDir)
 maps <- maps[!(maps %in% c('noBinding.csv'))]
 setwd(cobindDir)
@@ -20,14 +21,17 @@ factors <- foreach(matrix = maps, .packages = c("data.table", "pheatmap", "dends
     mat <- t(mat)
 
     name <- split(matrix, ".")[[1]][1]
-    pdf(paste0(cobindDir,name,".pdf"))
+    pdf(paste0(outDir,name,".pdf"))
     pheatmap(
         mat               = mat,
-        cluster_cols      = sort_hclust(hclust.vector(t(mat), method="ward")),
-        cluster_rows      = sort_hclust(hclust.vector(mat, method="ward")),
+        #cluster_cols      = sort_hclust(hclust.vector(t(mat), method="ward")),
+        #cluster_rows      = sort_hclust(hclust.vector(mat, method="ward")),
+        # will reach recursion limit on some cobinding maps
+        cluster_cols      = hclust.vector(t(mat), method="ward"),
+        cluster_rows      = hclust.vector(mat, method="ward"),
         fontsize          = 12,
-        treeheight_row    = 3, 
-        treeheight_col    = 3,
+        treeheight_row    = 0, 
+        treeheight_col    = 0,
         show_colnames     = F,
         fontsize_row      = 4,
         color             = colorRampPalette(brewer.pal(9,"Reds"))(400))
