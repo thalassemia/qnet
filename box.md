@@ -50,7 +50,9 @@ Contains DEseq2 output for SS vs P, CI vs P, SS vs SSR, and CI vs CIR.
 #### **Co-association**
 Contains [co-binding maps](tfchip/info.md#Visualize-Co-binding-as-Heatmap) created using various sets of SS vs P DE TFs and DE genes (e.g. upregulated, downregulated, all). Contains [interaction heatmaps](tfchip/info.md#train/interpret-ml-models) corresponding to each of these co-binding maps.
 
-***Key***: **UU** = upregulated TFs and genes, **DD** = downregulated TFs and genes, **_down** = all DE TFs and downregulated genes, **_up** = all DE TFs and upregulated genes, **down** = downregulated TFs and all DE genes, **up** = upregulated TFs and all DE genes, **all** = all DE TFs and DE genes
+**Key**: **UU** = upregulated TFs and genes, **DD** = downregulated TFs and genes, **_down** = all DE TFs and downregulated genes, **_up** = all DE TFs and upregulated genes, **down** = downregulated TFs and all DE genes, **up** = upregulated TFs and all DE genes, **all** = all DE TFs and DE genes
+
+Additionally, for interaction heatmaps: **self** = models trained without validation test sets (standardized to 100 boosting rounds), **test** = model trained with test sets and early stopping (50 rounds) to prevent overfitting (often resulted in significantly lower model accuracy on primary set due to stopping very early, suggesting the differences between ChIP-seq data from experiment to experiment are to drastic to ignore)
 
 #### **BETA**
 Contains [BETA output](beta/info.md#betaBatchpy) (basic and minus mode) for SS vs P DE TF ChIP-seq data from 2018 Cistrome batch download. Includes two lists of merged (deduplicated) predicted targets for each DE TF, one for all targets and a second specifically for DE targets. Also contains [heatmaps](beta/info.md#targetEnrichmentR) showing log 2 fold changes of DE targets for DE TFs at various regulatory potential cutoffs.
