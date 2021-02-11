@@ -84,7 +84,9 @@ For each transcription factor, runs:
 Each row in the output files contains the chromosome, peak start, and peak end values of a peak in `factor` and the normalized rank of the overlapping peak in `cofactor` (-1 if none found; write multiple rows if more than one found).
 
 ### [**Visualize Co-binding as Heatmap**](cobindMaps/cobindMap.r)
-Creates a heatmap visualization of all co-binding matrices (see [DE Gene Prep](#DE-gene-prep)) in a given directory. For each heatmap, hierarchical clustering is performed on both the rows and columns using Euclidean distance and Ward linkage.
+Creates a heatmap visualization of all co-binding matrices (see [DE Gene Prep](#DE-gene-prep)) in a given directory. For each heatmap, hierarchical clustering is performed on both the rows and columns using Euclidean distance and Ward linkage. The clustering dendrograms are rearranged using [dendsort](https://cran.r-project.org/web/packages/dendsort/index.html) to get the final output.
+
+**Note**: For reasons unknown, dendsort fails with the error `C stack usage 79xxxxx is too close to the limit` when running this code on `down_train.csv`. Thus, the co-binding heatmap for this one file does NOT have its rows/columns arranged using dendsort.
 
 ### [**OLD**: TF-centric Co-binding](cobindMaps/cobindOld.R)
 Creates separate dataframes for each highly enriched or depleted TF by concatenating all the rank-normalized, peak-overlapped bed files for that individual TF. After performing hierarchical clustering on both the rows and columns (Euclidean distance, Ward linkage) using the memory-efficient [fastcluster](http://danifold.net/fastcluster.html) library, it creates cobinding heatmaps as seen in [PMC4154057](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4154057/). 
@@ -109,7 +111,7 @@ Calculates train and test set accuracies for each model (saved in Hoffman2 job o
 
 Saves the resulting LightGBM model, the training set, the test set, the SHAP interaction values, the SHAP values, the list of features, and the SHAP explainer object in a python shelf for future access.
 
-### [**Interaction Heatmaps**](interactMaps/interactMatrix.py)
+### [**Interaction Heatmaps**](interactMaps/info.md)
 
 Creates two heatmaps of SHAP interaction values. To create the heatmap of averages, the SHAP interaction values for each TF pair are first averaged across all positive samples for a given model, then these averages were averaged again over all models. To create the heatmap of maximums, the SHAP interaction values at each positive sample are averaged across all models and the maximum (across all samples) is taken for each TF pair.
 
