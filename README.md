@@ -8,7 +8,6 @@ _**Using a mix of in-house and public datasets, we aim to extrapolate meaningful
 1. [Filter ChIP-Seq Data](tfchip/info.md#filter-chip-seq-data)
 1. [Preprocess Data](tfchip/info.md#preprocess-data)
 1. [Train/Interpret ML Models](tfchip/info.md#train/interpret-ml-models)
-1. [Analyze Results](tfchip/analyze/info.md)
 
 ---
 

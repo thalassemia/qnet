@@ -4,11 +4,11 @@ import os
 import re
 from multiprocessing import Pool
 
-peakdir = os.path.expandvars('$SCRATCH/tfchip/goodBeds/')
+peakdir = os.path.expandvars('$SCRATCH/cobinding/beds/')
 #outdir = os.path.expandvars('$SCRATCH/output/betaMinus/')
-outdir = os.path.expandvars('$SCRATCH/output/betaBasic')
+outdir = os.path.expandvars('$SCRATCH/cobinding/betaBasic')
 de = os.path.expandvars('$SCRATCH/data/bsf.csv')
-cores = 8
+cores = 36
 
 def beta(name, root):
     #args = shlex.split('BETA minus -p ' + name + ' -g hg38 -n ' + os.path.dirname(os.path.join(root, name)) + '_' + re.sub('[^0-9]', '', name) + ' -o ' + outdir)

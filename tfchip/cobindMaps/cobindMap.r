@@ -2,7 +2,8 @@ library(doParallel)
 
 # get list of all cobinding matrices
 cobindDir = "/u/scratch/s/seanchea/cobinding/cobind/"
-outDir <- "/u/scratch/s/seanchea/cobinding/cobindD/"
+outDir <- "/u/scratch/s/seanchea/cobinding/cobindH/"
+dir.create(outDir, showWarnings = F)
 maps <- list.files(cobindDir)
 maps <- maps[!(maps %in% c('noBinding.csv'))]
 setwd(cobindDir)

@@ -9,7 +9,7 @@ baseOutDir <- system("echo $SCRATCH/cobinding/annotated/", intern = TRUE)
 
 factors <- list.files()
 # exclude informational files
-factors <- factors[!(factors %in% c("nodata.csv", "key.csv"))] 
+factors <- factors[!(factors %in% c("encodeKey.csv", "nodata.csv", "key.csv"))] 
 
 print("Starting annotation")
 
