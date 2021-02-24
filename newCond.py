@@ -3,7 +3,7 @@ import os
 from shutil import copy
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.stats import pearsonr, hypergeom
+from scipy.stats import pearsonr, fisher_exact
 
 os.makedirs(os.path.expandvars("$SCRATCH/compareCond/plots/"), exist_ok = True)
 tfPath = os.path.expandvars("$SCRATCH/data/Database.csv")
@@ -63,11 +63,15 @@ deTFs = [ss_tfs, ci_tfs, sir_tfs, cir_tfs]
 
 gene = np.zeros((4,4))
 tf = np.zeros((4,4))
+fisher = np.zeros((4,4))
+union = deTFs[0][["Ensembl ID", "gene_name", "log2FoldChange", "padj"]].merge(deTFs[0][["Ensembl ID", "gene_name", "log2FoldChange", "padj"]], on = "Ensembl ID", indicator = True, how = "outer")
 
 for i in range(4):
     for j in range(i,4):
         merged = deGenes[i][["Ensembl ID", "gene_name", "log2FoldChange", "padj"]].merge(deGenes[j][["Ensembl ID", "gene_name", "log2FoldChange", "padj"]], on = "Ensembl ID", indicator = True, how = "outer")
         merged.to_csv(os.path.expandvars("$SCRATCH/compareCond/" + outNames[i] + "_" + outNames[j] + "_genes.csv"))
+        # count the total number of DE genes in any of the DESeq2 outputs
+        #union = union.merge(merged, on = "Ensembl ID", how = "outer")
         same = merged.loc[np.sign(merged.loc[:,'log2FoldChange_x']) == np.sign(merged.loc[:,'log2FoldChange_y'])]
         diff = merged.loc[np.sign(merged.loc[:,'log2FoldChange_x']) != np.sign(merged.loc[:,'log2FoldChange_y'])]
         # theoretically there should be no output here because i == j means we are comparing the same files
@@ -79,16 +83,30 @@ for i in range(4):
         eq2 = np.poly1d(coef)
         r2, p2 = pearsonr(merged.loc[merged["_merge"] == "both"]['log2FoldChange_x'], merged.loc[merged["_merge"] == "both"]['log2FoldChange_y'])
         plt.plot(merged.loc[merged["_merge"] == "both"]['log2FoldChange_x'], eq2(merged.loc[merged["_merge"] == "both"]['log2FoldChange_x']), c = 'r', label = f'r = {round(r2, 3)}')
-        # count the number of tfs that appear in both compared lists and change in the same or different directions
+        # count the number of genes that appear in both compared lists and change in the same or different directions
         gene[j,i] = np.sum(diff['_merge'] == 'both')
         gene[i,j] = np.sum(same['_merge'] == 'both')
+        # use fisher exact test to calculate p-value of observing the given overlap in DE genes (using 6432 total DE genes)
+        if i != j:
+            degCont = [[np.sum(merged['_merge'] == 'both'), np.sum(merged['_merge'] == 'left_only')], [np.sum(merged['_merge'] == 'right_only'), 6432 - np.sum(merged['_merge'] == 'both') - np.sum(merged['_merge'] == 'left_only') - np.sum(merged['_merge'] == 'right_only')]]
+            odds, fisher[i,j] = fisher_exact(degCont, alternative = 'greater')
+            print(degCont)
+            print(fisher_exact(degCont, alternative = 'greater'))
         merged = deTFs[i][["Ensembl ID", "gene_name", "log2FoldChange", "padj"]].merge(deTFs[j][["Ensembl ID", "gene_name", "log2FoldChange", "padj"]], on = "Ensembl ID", indicator = True, how = "outer")
         merged.to_csv(os.path.expandvars("$SCRATCH/compareCond/" + outNames[i] + "_" + outNames[j] + "_tfs.csv"))
+        # count the number of DE TFs in any of the DESeq2 outputs
+        #union = union.merge(merged, on = "Ensembl ID", how = "outer")
         same = merged.loc[np.sign(merged.loc[:,'log2FoldChange_x']) == np.sign(merged.loc[:,'log2FoldChange_y'])]
         diff = merged.loc[np.sign(merged.loc[:,'log2FoldChange_x']) != np.sign(merged.loc[:,'log2FoldChange_y'])]
         # count the number of tfs that appear in both compared lists and change in the same or different directions
         tf[j,i] = np.sum(diff['_merge'] == 'both')
         tf[i,j] = np.sum(same['_merge'] == 'both')
+        # use fisher exact test to calculate p-value of observing the given overlap in DE TFs (using 406 total DE TFs)
+        if i != j:
+            degCont = [[np.sum(merged['_merge'] == 'both'), np.sum(merged['_merge'] == 'left_only')], [np.sum(merged['_merge'] == 'right_only'), 406 - np.sum(merged['_merge'] == 'both') - np.sum(merged['_merge'] == 'left_only') - np.sum(merged['_merge'] == 'right_only')]]
+            odds, fisher[j,i] = fisher_exact(degCont, alternative = 'greater')
+            #print(degCont)
+            #print(fisher_exact(degCont, alternative = 'greater'))
         # overlay plot showing correlation between the log 2 fold changes of DE TFs
         merged = merged.loc[merged['_merge'] == 'both']
         plt.scatter(merged["log2FoldChange_x"], merged["log2FoldChange_y"], c = 'darkorange', label = 'DE TFs', alpha = 0.5)
@@ -103,3 +121,5 @@ for i in range(4):
         plt.clf()
 np.savetxt(os.path.expandvars("$SCRATCH/compareCond/gene_counts.csv"), gene)
 np.savetxt(os.path.expandvars("$SCRATCH/compareCond/tf_counts.csv"), tf)
+np.savetxt(os.path.expandvars("$SCRATCH/compareCond/fisher.csv"), fisher)
+#print(union.shape)
