@@ -12,11 +12,11 @@ degs = degs['gene_name'].tolist()
 
 results, metadata = FromRegions.using_macs_output('hg38', degs, '/u/scratch/s/seanchea/data/ATACraw/SS/ss123_peaks.xls')
 results_df = pd.DataFrame(results.to_dict())
-results_df.to_csv('/u/scratch/s/seanchea/lisaFR.csv', index = Fale)
+results_df.to_csv('/u/scratch/s/seanchea/lisaFR.csv', index = False)
 genes = FromGenes('hg38')
 resultsG, metadataG = genes.predict(degs, num_background_genes=10000)
 resultsG_df = pd.DataFrame(resultsG.to_dict())
-resultsG_df.to_csv('/u/scratch/s/seanchea/lisaFG.csv', index = Fale)
+resultsG_df.to_csv('/u/scratch/s/seanchea/lisaFG.csv', index = False)
 
 results_df = pd.read_csv('/u/scratch/s/seanchea/lisaFR.csv')
 resultsG_df = pd.read_csv('/u/scratch/s/seanchea/lisaFG.csv')
