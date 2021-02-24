@@ -39,6 +39,7 @@ _**Using a mix of in-house and public datasets, we aim to extrapolate meaningful
 1. [H4K20me3 Patterns](#h4k20me3-patterns)
 1. [Comparing DE Between Quiescent Conditions](#comparing-DE-between-quiescent-conditions)
 1. [Read Alignment](#read-alignment)
+1. [LISA and ChEA3 Putative Regulators](#lisa-and-chea3-putative-regulators)
 1. [Box Folder Organization](box.md)
 
 ## [GREAT GO of ChIP-Seq Peak Files](greatBatch.R)
@@ -93,3 +94,40 @@ Filters all DE gene lists (DEseq2) for p-adjusted <= 0.05 and abs(log2FoldChange
 
 &nbsp;  
 **SS** = serum starved, **CI** = contact inhibited, **P** = proliferating, **SSR** = serum starved restimulated, **CIR** = contact inhibited restimulated, **Total** = count for that DE list, **Same Dir.** = count of overlapping entries with the same fold change sign in both commpared lists, **Diff Dir.** = count of overlapping entries with different fold change signs in both compared lists
+
+## [LISA and ChEA3 Putative Regulators](lisa_chea3.py)
+Uses LISA [python package](https://github.com/liulab-dfci/lisa2) to generate ranked lists of transcriptional regulators predicted to have the strongest association with DE genes using two modes:
+- FromGenes (FG): Makes predictions using epigenetic features modelled from public TF and histone ChIP-seq along with DNaseI data
+- FromRegions (FR): Makes predictions using user-supplied epigenetic features (e.g. ATAC-seq peaks)
+
+Also reads in ChEA3 outputs and a list of DE genes from csv files and quantifies the amount of pairwise overlap between these four lists by creating tables like the on below. In this example, among the top 500 regulators predicted by each of FR, FG, and ChEA3, 177 are shared between ChEA3 and FR, 183 are shared between ChEA3 and FG, and 469 are shared between FG and FR. The parenthesized number in each cell represents the -log<sub>10</sub> of the p-value from a one-tailed Fisher Exact test, with significant values (p < 0.05) starred. 
+
+<center>
+
+**Cutoff**   | **ChEA3 and FR** | **ChEA3 and FG** | **FG and FR** 
+-------------|------------------|------------------|---------------
+**Top 500**  |177 (8.4\*)       |183 (10.1\*)      |469 (288\*)    
+**Top 250**  |57 (5.9\*)        |65 (9.2\*)        |212 (219\*)    
+**Top 50**   |4 (1.4\*)         |5 (2.1\*)         |30 (57\*)      
+**Top 10**   |0 (0)             |0 (0)             |5 (13\*)       
+
+</center>
+
+Specifically, the test was performed on 2-by-2 contingency tables for each cutoff that looks like the one below.
+
+<center>
+
+ &nbsp;          | **In Set 2** | **Not in Set 2** 
+-----------------|--------------|------------------
+**In Set 1**     | Shared       | Only Set 1      
+**Not in Set 1** |Only Set 2    | Neither        
+
+</center>
+
+The value of the "Neither" cells were computed as:
+
+    (Union of two sets) - (Intersection of sets*) - (Only in Set 1*) - (Only in Set 2*)
+
+Sets with a `*` were limited to the cutoff being tested (e.g. top 500), while the union of the two sets was tabulated over the entirety of both sets with no cutoff.
+
+Fisher p-values for DE TF enrichment are calculated using similar contingency tables created using the overlap between each of ChEA3, FR, and FG outputs with the list of SS/P DE TFs. For these tables, cutoffs are never applied to the DE TF list (neither in determining overlap nor in the calculation of the "Neither" cell value).

@@ -1,6 +1,7 @@
 # ATAC-seq Annotation
 
 ## Table of Contents
+1. [ATAC-seq Peak Calling](#atac-seq-peak-calling)
 1. [Annotate Differentially Accessible (DA) Regions](#annotate-da-regions)
 1. [Annotate DA Regions with Candidate Cis-Regulatory Elements (cCRE)](#compare-with-ccres)
 1. [Create Bar Charts for Annotation Frequencies](#create-bar-charts-for-annotation-frequencies)
@@ -8,6 +9,12 @@
 1. [To-Do](#to-do)
 
 ---
+
+## [ATAC-seq Peak Calling](atac.sh)
+
+**Note**: Requires gatk, samtools, bowtie2, deeptools, and macs3 (will replace with BWA)
+
+A script to automate peak calling of ATAC-seq data from raw reads.
 
 ## [Annotate DA Regions](anno.r)
 
