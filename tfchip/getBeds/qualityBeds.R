@@ -7,15 +7,16 @@ bedPath = system("echo $SCRATCH/tfchip/human_factor/", intern = TRUE)
 outDir = system("echo $SCRATCH/cobinding/beds/", intern = TRUE)
 # tfs for which there is already data
 existingFiles <- trimws(list.files(outDir))
-encTFs = data.frame(DCid = rep('N/A', length(existingFiles)), Factor = existingFiles, rank = rep('N/A', length(existingFiles)), 
-                    Cell_line = rep('N/A', length(existingFiles)), Cell_type = rep('N/A', length(existingFiles)), Tissue_type = rep('N/A', length(existingFiles)),
-                    FastQC = rep('N/A', length(existingFiles)), UniquelyMappedRatio = rep('N/A', length(existingFiles)),
-                    PBC = rep('N/A', length(existingFiles)), PeaksFoldChangeAbove10 = rep('N/A', length(existingFiles)),
-                    FRiP = rep('N/A', length(existingFiles)), PeaksUnionDHSRatio = rep('N/A', length(existingFiles)))
+enc <- read_csv(paste0(outDir, "encodeKey.csv")) %>% arrange(desc(FRiP))
+encTFs <- data.frame(DCid = enc[['X1']], Factor = enc[['Target']], rank = rownames(enc), 
+                    Cell_line = enc[['Cell Type(s)']], Cell_type = rep('N/A', nrow(enc)), Tissue_type = rep('N/A', nrow(enc)),
+                    FastQC = rep('N/A', nrow(enc)), UniquelyMappedRatio = enc[['NRF']],
+                    PBC = enc[['PBC1']], PeaksFoldChangeAbove10 = rep('N/A', nrow(enc)),
+                    FRiP = enc[['FRiP']], PeaksUnionDHSRatio = rep('N/A', nrow(enc)))
 
 # find files matching minimum quality criteria and assign them a rank by descending FRiP
-index <- read_delim(indexPath, "\t") %>% filter(FastQC>=25 & UniquelyMappedRatio>=0.5  & PBC>=0.5)
-index <- arrange(index, desc(FRiP), desc(PeaksFoldChangeAbove10), desc(PeaksUnionDHSRatio))
+index <- read_delim(indexPath, "\t") %>% filter(FastQC>=25 & UniquelyMappedRatio>=0.6  & PBC>=0.8 & PeaksUnionDHSRatio>=0.7)
+index <- arrange(index, desc(FRiP), desc(PeaksFoldChangeAbove10))
 index$rank <- rownames(index)
 
 # figure out which TFs have corresponding bed files
@@ -24,6 +25,10 @@ cistromeTFs <- inner_join(index, de, by="Factor") %>% select(DCid, Factor, rank,
 encodeTFs <- inner_join(encTFs, de, by="Factor") %>% select(DCid, Factor, rank, Cell_line, Cell_type, Tissue_type, FastQC, UniquelyMappedRatio, PBC, PeaksFoldChangeAbove10, FRiP, PeaksUnionDHSRatio, log2FoldChange, padj)
 rbind(cistromeTFs, encodeTFs) %>% write_csv(paste(outDir, "key.csv", sep=""))
 anti_join(de, index, by="Factor") %>% anti_join(encTFs, by = "Factor") %>% select(Factor) %>% write_csv(paste(outDir, "nodata.csv", sep=""))
+# get count of downregulated DE TFs with data
+print(paste("Down:", unique(filter(rbind(cistromeTFs, encodeTFs), log2FoldChange < 0)[, 'Factor'])))
+# get count of upregulated DE TFs with data
+print(paste("Up:", unique(filter(rbind(cistromeTFs, encodeTFs), log2FoldChange >= 0)[, 'Factor'])))
 
 for (row in 1:nrow(cistromeTFs)) {
   id = cistromeTFs[row, "DCid"]
